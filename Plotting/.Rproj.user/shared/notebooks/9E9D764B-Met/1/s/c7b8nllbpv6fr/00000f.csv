@@ -1,7 +1,0 @@
-"0","plot <- ggplot(met_scores %>% filter(mutation_type != ""X"")) +"
-"0","  geom_point(aes(x = IL3_score, y = IL3_withdrawal_score)) + "
-"0","  xlab(""IL3"") + "
-"0","  ylab(""IL3 withdrawal"") + "
-"0","  coord_fixed(ratio = 1) +"
-"0","  theme_classic() "
-"0","print(plot)"

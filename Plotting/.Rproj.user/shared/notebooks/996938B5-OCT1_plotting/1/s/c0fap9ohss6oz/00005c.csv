@@ -1,6 +1,0 @@
-"0",""
-"0","variant_df = oct1_scores %>% filter(mutation_type != ""X"")"
-"0",""
-"0","ggplot(data = variant_df, aes(x=GFP_score, y=SM73_1_score)) + "
-"0","  geom_density_2d_filled(n=200, h=c(1, 1), na.rm = TRUE) +"
-"0","  facet_wrap(vars(mutation_type))"

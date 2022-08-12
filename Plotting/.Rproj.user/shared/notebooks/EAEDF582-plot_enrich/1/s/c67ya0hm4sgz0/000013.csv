@@ -1,3 +1,0 @@
-"0","ggplot(data=variant_df, aes(pos, y=factor(variants, level = order), fill=score)) + "
-"0","  geom_tile() + scale_fill_gradient(high=""blue"", low=""red"") +"
-"0","  xlab(""Position"") + ylab(""Variant"") + ggtitle(""VatD score"") + theme_classic()"
