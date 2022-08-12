@@ -1,0 +1,65 @@
+variants_file: "designed_variants/oct1_variants.csv"
+
+ref_file: "refs.fasta"
+
+oligo_file: "oligos/OCT1_oligos.csv"
+
+offset: 35
+
+chunk_starts: [2, 52, 103, 154, 205, 254, 305, 355, 405, 455, 505]
+chunk_ends: [51, 102, 153, 204, 253, 304, 354, 404, 454, 504, 554]
+
+### GATK output definitions
+
+gatk_output_dir: "gatk_output/"
+
+first_files: ["OCT1___Cy4_S67_L002.variantCounts", "OCT1___Cy5_S68_L002.variantCounts"]
+first_experiments: ["Cy4", "Cy5"]
+
+files: [
+    'CAACGAGAGC_CACTCAATTC_S416_L001.variantCounts',
+    'CTTCTAAGTC_CCTGTAGAGT_S418_L001.variantCounts',
+    'GAACAATTCC_TCCAACTCTA_S419_L001.variantCounts',
+    'TGTGGTCCGG_CTAGTGCTCT_S417_L001.variantCounts',
+    'cy1a_S394_L001.variantCounts',
+    'cy1b_S405_L001.variantCounts',
+    'cy2a_S395_L001.variantCounts',
+    'cy2b_S406_L001.variantCounts',
+    'cy3a_S396_L001.variantCounts',
+    'cy3b_S407_L001.variantCounts',
+    'cy4b_S408_L001.variantCounts',
+    'cy4c_S388_L001.variantCounts',
+    'cy5a_S398_L001.variantCounts',
+    'cy5b_S409_L001.variantCounts',
+    'cy5c_S389_L001.variantCounts',
+    'cy6a_S399_L001.variantCounts',
+    'cy6b_S410_L001.variantCounts',
+    'cy7a_S400_L001.variantCounts',
+    'cy7b_S411_L001.variantCounts',
+    'gfp1a_S401_L001.variantCounts',
+    'gfp1b_S412_L001.variantCounts',
+    'gfp1c_S390_L001.variantCounts',
+    'gfp2a_S402_L001.variantCounts',
+    'gfp2b_S413_L001.variantCounts',
+    'gfp2c_S391_L001.variantCounts',
+    'gfp3a_S403_L001.variantCounts',
+    'gfp3b_S414_L001.variantCounts',
+    'gfp3c_S392_L001.variantCounts',
+    'gfp4a_S404_L001.variantCounts',
+    'gfp4b_S415_L001.variantCounts',
+    'gfp4c_S393_L001.variantCounts'
+]
+experiments: [
+    "A", "B", "C", "D",
+    "Cy1a", "Cy1b",
+    "Cy2a", "Cy2b",
+    "Cy3a", "Cy3b",
+    "Cy4b", "Cy4c",
+    "Cy5a", "Cy5b", "Cy5c",
+    "Cy6a", "Cy6b",
+    "Cy7a", "Cy7b",
+    "GFP1a", "GFP1b", "GFP1c",
+    "GFP2a", "GFP2b", "GFP2c",
+    "GFP3a", "GFP3b", "GFP3c",
+    "GFP4a", "GFP4b", "GFP4c"
+]

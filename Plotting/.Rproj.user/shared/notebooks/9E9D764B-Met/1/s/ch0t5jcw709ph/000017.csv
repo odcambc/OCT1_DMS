@@ -1,0 +1,3 @@
+"0",""
+"0","met_IL3_withdrawal.pr <- met_IL3_withdrawal_wide %>% prcomp(center = FALSE, scale = TRUE)"
+"0","plot(met_IL3_withdrawal.pr)"

@@ -1,0 +1,45 @@
+"0","# Shift to bring positions into a common frame"
+"0",""
+"0","shifted_indels <-"
+"0","  full_join("
+"0","    full_join("
+"0","      full_join("
+"0","        aligned_kir_scores %>% filter(variants == ""D_1"") %>% mutate(pos = pos, len = -1 * strtoi(len), .keep = ""all""),"
+"0","        aligned_kir_scores %>% filter(variants == ""D_2"") %>% mutate(pos = pos + 1, len = -1 * strtoi(len), .keep = ""all"")),"
+"0","      aligned_kir_scores %>% filter(variants == ""D_3"") %>% mutate(pos = pos + 2, len = -1 * strtoi(len), .keep = ""all"")),"
+"0","    aligned_kir_scores %>% filter(mutation_type == ""I"") %>% mutate(pos = pos, len = strtoi(len), .keep = ""all""))"
+"1","[38;5;232mJoining, by = c(""Kir2_2_Resno_3SPI"", ""SS"", ""hgvs"", ""A_SE"", ""A_epsilon"", ""A_score"", ""S_SE"", ""S_epsilon"", ""S_score"", ""SA_SE"", ""SA_epsilon"", ""SA_score"", ""pos"", ""len"", ""mutation_type"", ""variants"", ""is.wt"", ""delta_score"", ""Feature_ext"", ""Feature"", ""Part"",
+""Function"", ""allosteric"", ""allosteric_noGa"", ""Master_POS"", ""Kir2_1_FLAG_Resno_mus"", ""Kir2_1_FLAG_Resid_mus"", ""Kir2_1_Resno_mus"", ""Kir2_1_Resid_mus"", ""Kir21_group"", ""Kir2_1_Resno_human"", ""Kir2_1_Resid_human"", ""IRK_C_PF08466"", ""IRK_PF01007"",
+""IRK_N_PF08466"", ""MD"", ""MI"", ""Kir2_2_FLAG_Resno_human"", ""Kir2_2_FLAG_Resid_human"", ""Kir2_2_pymol_ss_3SPI"", ""Kir2_2_Resid_3SPI"", ""Kir2_2_Resid_NC"", ""Kir2_2_Resno_NC"", ""Kir3_1_FLAG_Resno_human"", ""Kir3_1_FLAG_Resid_human"", ""Kir3_1_Resno_human"",
+""Kir3_1_Resid_human"", ""Kir3_2_FLAG_Resno_human"", ""Kir3_2_FLAG_Resid_human"", ""GIRK2_Resno_4KFM"", ""GIRK2_Resid_4KFM"", ""Kir31_group"", ""Kir6_2_FLAG_Resno_human"", ""Kir6_2_FLAG_Resid_human"", ""Kir6_2_Resno_5TWV"", ""Kir_6_2_Resid_5TWV"", ""Kir6_2_Resno_6C3O"",
+""Kir6_2_Resid_6C3O"", ""Kir62_group"", ""MD_prob"", ""MI_prob"")[39m
+"
+"1","[38;5;232mJoining, by = c(""Kir2_2_Resno_3SPI"", ""SS"", ""hgvs"", ""A_SE"", ""A_epsilon"", ""A_score"", ""S_SE"", ""S_epsilon"", ""S_score"", ""SA_SE"", ""SA_epsilon"", ""SA_score"", ""pos"", ""len"", ""mutation_type"", ""variants"", ""is.wt"", ""delta_score"", ""Feature_ext"", ""Feature"", ""Part"",
+""Function"", ""allosteric"", ""allosteric_noGa"", ""Master_POS"", ""Kir2_1_FLAG_Resno_mus"", ""Kir2_1_FLAG_Resid_mus"", ""Kir2_1_Resno_mus"", ""Kir2_1_Resid_mus"", ""Kir21_group"", ""Kir2_1_Resno_human"", ""Kir2_1_Resid_human"", ""IRK_C_PF08466"", ""IRK_PF01007"",
+""IRK_N_PF08466"", ""MD"", ""MI"", ""Kir2_2_FLAG_Resno_human"", ""Kir2_2_FLAG_Resid_human"", ""Kir2_2_pymol_ss_3SPI"", ""Kir2_2_Resid_3SPI"", ""Kir2_2_Resid_NC"", ""Kir2_2_Resno_NC"", ""Kir3_1_FLAG_Resno_human"", ""Kir3_1_FLAG_Resid_human"", ""Kir3_1_Resno_human"",
+""Kir3_1_Resid_human"", ""Kir3_2_FLAG_Resno_human"", ""Kir3_2_FLAG_Resid_human"", ""GIRK2_Resno_4KFM"", ""GIRK2_Resid_4KFM"", ""Kir31_group"", ""Kir6_2_FLAG_Resno_human"", ""Kir6_2_FLAG_Resid_human"", ""Kir6_2_Resno_5TWV"", ""Kir_6_2_Resid_5TWV"", ""Kir6_2_Resno_6C3O"",
+""Kir6_2_Resid_6C3O"", ""Kir62_group"", ""MD_prob"", ""MI_prob"")[39m
+"
+"1","[38;5;232mJoining, by = c(""Kir2_2_Resno_3SPI"", ""SS"", ""hgvs"", ""A_SE"", ""A_epsilon"", ""A_score"", ""S_SE"", ""S_epsilon"", ""S_score"", ""SA_SE"", ""SA_epsilon"", ""SA_score"", ""pos"", ""len"", ""mutation_type"", ""variants"", ""is.wt"", ""delta_score"", ""Feature_ext"", ""Feature"", ""Part"",
+""Function"", ""allosteric"", ""allosteric_noGa"", ""Master_POS"", ""Kir2_1_FLAG_Resno_mus"", ""Kir2_1_FLAG_Resid_mus"", ""Kir2_1_Resno_mus"", ""Kir2_1_Resid_mus"", ""Kir21_group"", ""Kir2_1_Resno_human"", ""Kir2_1_Resid_human"", ""IRK_C_PF08466"", ""IRK_PF01007"",
+""IRK_N_PF08466"", ""MD"", ""MI"", ""Kir2_2_FLAG_Resno_human"", ""Kir2_2_FLAG_Resid_human"", ""Kir2_2_pymol_ss_3SPI"", ""Kir2_2_Resid_3SPI"", ""Kir2_2_Resid_NC"", ""Kir2_2_Resno_NC"", ""Kir3_1_FLAG_Resno_human"", ""Kir3_1_FLAG_Resid_human"", ""Kir3_1_Resno_human"",
+""Kir3_1_Resid_human"", ""Kir3_2_FLAG_Resno_human"", ""Kir3_2_FLAG_Resid_human"", ""GIRK2_Resno_4KFM"", ""GIRK2_Resid_4KFM"", ""Kir31_group"", ""Kir6_2_FLAG_Resno_human"", ""Kir6_2_FLAG_Resid_human"", ""Kir6_2_Resno_5TWV"", ""Kir_6_2_Resid_5TWV"", ""Kir6_2_Resno_6C3O"",
+""Kir6_2_Resid_6C3O"", ""Kir62_group"", ""MD_prob"", ""MI_prob"")[39m
+"
+"0","indel_correlations_S <- shifted_indels %>% filter(pos > 3 & pos < 423) %>%"
+"0","  group_by(pos) %>%"
+"0","  summarize(Correlation = cor(S_score, len), SS = first(SS)) %>%"
+"0","                              mutate(SS = replace(SS, SS == "" "", ""C"")) %>%"
+"0","                              mutate(SS = replace(SS, SS == ""G"", ""H"")) %>%"
+"0","                              mutate(SS = replace(SS, SS == ""I"", ""H"")) %>%"
+"0","                              mutate(SS = replace(SS, SS == ""S"", ""C"")) %>%"
+"0","                              mutate(SS = replace(SS, SS == ""T"", ""C"")) %>%"
+"0","                              mutate(SS = replace(SS, SS == ""E"", ""B""))"
+"0",""
+"0","ss <- ss %>% mutate(SS = replace(SS, SS == "" "", ""C"")) %>%"
+"0","                              mutate(SS = replace(SS, SS == ""G"", ""H"")) %>%"
+"0","                              mutate(SS = replace(SS, SS == ""I"", ""H"")) %>%"
+"0","                              mutate(SS = replace(SS, SS == ""S"", ""C"")) %>%"
+"0","                              mutate(SS = replace(SS, SS == ""T"", ""C"")) %>%"
+"0","                              mutate(SS = replace(SS, SS == ""E"", ""B""))"
+"0",""

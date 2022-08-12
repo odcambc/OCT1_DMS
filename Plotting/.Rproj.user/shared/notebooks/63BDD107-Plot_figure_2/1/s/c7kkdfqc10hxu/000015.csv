@@ -1,0 +1,7 @@
+"0","print(plot_ridge_TRPV1)
+"
+"2","Picking joint bandwidth of 3.3
+"
+"2","Warning:"
+"2"," Removed 503 rows containing non-finite values (stat_density_ridges).
+"

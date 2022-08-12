@@ -1,0 +1,12 @@
+"0","vatd_1KHR <- read.pdb(""1KHR"")"
+"1","  Note: Accessing on-line PDB file
+"
+"2","Warning: /var/folders/ms/__537vf97ldcw75gtg05r7hh0000gn/T//RtmpYhZfBt/1KHR.pdb  exists. Skipping download"
+"0","sse_1khr <- dssp(vatd_1KHR, exefile = ""dssp"", resno=TRUE, full=FALSE, verbose=FALSE)"
+"2","/usr/local/bin/mkdssp
+"
+"2","Warning: Non-protein residues detected in input PDB: VIR, COA, HOH"
+"0","sse_1khr_list <- data.frame(pos = strtoi(str_extract(names(sse_1khr$sse), ""^[0-9]+"")), SS = sse_1khr$sse)"
+"0","sse_1khr_list <- sse_1khr_list %>% mutate(SS = replace(SS, SS == "" "", ""-""))"
+"0",""
+"0","write.csv(sse_1khr_list, '~/Desktop/VatX/1khr_ss.csv')"

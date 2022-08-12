@@ -1,0 +1,7 @@
+"0","  plot <- baseline_r %>% filter(length_NT > 3 & length_NT < 430) %>%"
+"0","  ggplot() +"
+"0","  geom_point(aes(x=length_NT, y=counts)) +"
+"0","  scale_y_continuous(trans='log10') + "
+"0","      theme_classic() "
+"0",""
+"0","print(plot)"

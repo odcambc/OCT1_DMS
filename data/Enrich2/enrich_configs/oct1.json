@@ -1,0 +1,68 @@
+{
+  "conditions": [
+    {
+      "name": "0 SM73",
+      "selections": [
+        {
+          "libraries": [
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/Cy1a.tsv",
+              "identifiers": {
+                "min count": 2
+              },
+              "name": "0SM73R1T0",
+              "report filtered reads": false,
+              "timepoint": 0
+            }
+          ],
+          "name": "0SM73R1"
+        },
+        {
+          "libraries": [
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/Cy3b.tsv",
+              "identifiers": {},
+              "name": "UnnamedIdOnlySeqLib",
+              "report filtered reads": false,
+              "timepoint": 1
+            }
+          ],
+          "name": "0SM73R2"
+        },
+        {
+          "libraries": [],
+          "name": "1SM73R3"
+        }
+      ]
+    },
+    {
+      "name": "1SM73",
+      "selections": [
+        {
+          "libraries": [],
+          "name": "1SM73R1"
+        },
+        {
+          "libraries": [],
+          "name": "1SM73R2"
+        },
+        {
+          "libraries": [],
+          "name": "1SM7R33"
+        }
+      ]
+    },
+    {
+      "name": "GFP",
+      "selections": [
+        {
+          "libraries": [],
+          "name": "R1"
+        }
+      ]
+    }
+  ],
+  "name": "OCT1",
+  "output directory": "/Users/bartleby/Desktop/dms_analysis/data/Enrich2/Oct1_full
+  "
+}

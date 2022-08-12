@@ -1,0 +1,379 @@
+---
+title: "DIMPLE Figure 4"
+output: html_notebook
+---
+
+
+```{r}
+library(ggplot2)
+library(gglorenz)
+library(readr)
+library(stringr)
+library(tidyverse)
+library(dplyr)
+library(ggridges)
+library(ggbraid)
+library(tidyquant)
+source("dms_analysis_utilities.R")
+
+library(scales)
+library(colorspace)
+library(ggpubr)
+library(rstatix)
+```
+
+
+```{r}
+# Kir2.1 construct (with FLAG tag) sequence
+
+kir21_wt_fasta = "Kir21.fasta"
+
+con=file(kir21_wt_fasta,open="r")
+kir21_wt = readLines(con)[2]
+close(con)
+
+# Baseline libraries and raw sequencing counts
+
+# In codons
+vatd_chunk_starts = c(1, 42, 85, 127, 169)
+vatd_chunk_ends = c(41, 84, 126, 168, 209)
+vatd_chunks = mapply(c, vatd_chunk_starts, vatd_chunk_ends, SIMPLIFY=FALSE)
+
+kir21_chunk_starts = c(1, 49, 99, 148, 197, 246, 293, 341, 389)
+kir21_chunk_ends = c(48, 98, 147, 196, 245, 292, 340, 388, 436)
+kir21_chunks = mapply(c, kir21_chunk_starts, kir21_chunk_ends, SIMPLIFY=FALSE)
+
+trpv1_chunk_starts = c(1, 50, 101, 151, 201, 251, 300, 349, 398, 447, 496, 545, 594, 643, 692, 741, 791)
+trpv1_chunk_ends = c(49, 100, 150, 200, 250, 299, 348, 397, 446, 495, 544, 593, 642, 691, 740, 790, 838)
+TRPV1_chunks = mapply(c, trpv1_chunk_starts, trpv1_chunk_ends, SIMPLIFY=FALSE)
+
+mor_chunks_starts = c(1, 50, 101, 151, 201, 251, 300, 349, 398)
+mor_chunks_ends = c(49, 100, 150, 200, 250, 299, 348, 397, 400)
+mor_chunks = mapply(c, mor_chunks_starts, mor_chunks_ends, SIMPLIFY=FALSE)
+  
+variantCounts_colnames <- c("count", "pos", "chunk_pos", "chunk", "mutation_type", "name", "codon", "variants", "length", "hgvs")
+variantCounts_cotypes = "_iiiicccccc"
+
+baseline_file = '../data/counts/Kir21/baseline.csv'
+baseline <- read_csv(baseline_file, skip = 1, col_names = variantCounts_colnames, col_types=variantCounts_cotypes)
+
+vatd_t0_file = '../data/counts/VatD/t0.csv'
+vatd_t0 <- read_csv(vatd_t0_file, skip = 1, col_names = variantCounts_colnames, col_types=variantCounts_cotypes)
+
+trpv1_1_9_file = '../data/counts/TRPV1_MiSeq_QC/TRPV1_1-9.csv'
+trpv1_1_9 <- read_csv(trpv1_1_9_file, skip = 1, col_names = variantCounts_colnames, col_types=variantCounts_cotypes)
+trpv1_9_17_file = '../data/counts/TRPV1_MiSeq_QC/TRPV1_9-17.csv'
+trpv1_9_17 <- read_csv(trpv1_9_17_file, skip = 1, col_names = variantCounts_colnames, col_types=variantCounts_cotypes)
+
+TRPV1_overlap9_variants <- bind_rows(trpv1_1_9, trpv1_9_17) %>% group_by(hgvs, pos, chunk, chunk_pos, mutation_type, name, codon, variants, length) %>% summarize(count = sum(count))
+
+trpv1_N1_file = '../data/counts/TRPV1_MiSeq_QC/TRPV1_N1.csv'
+trpv1_N1 <- read_csv(trpv1_N1_file, skip = 1, col_names = variantCounts_colnames, col_types=variantCounts_cotypes)
+trpv1_N2_file = '../data/counts/TRPV1_MiSeq_QC/TRPV1_N2.csv'
+trpv1_N2 <- read_csv(trpv1_N2_file, skip = 1, col_names = variantCounts_colnames, col_types=variantCounts_cotypes)
+
+TRPV1_N_variants <- bind_rows(trpv1_N1, trpv1_N2) %>% group_by(hgvs, pos, chunk, chunk_pos, mutation_type, name, codon, variants, length) %>% summarize(count = sum(count))
+
+MOR_file = '../data/counts/MOR/library.csv'
+MOR <- read_csv(MOR_file, skip = 1, col_names = variantCounts_colnames, col_types=variantCounts_cotypes)
+
+# Kir2.1 Enrich2 score files
+kir_scores_file = "../data/Enrich2/Kir2.1_sorting/tsv/Kir21_indel_exp/main_identifiers_scores.tsv"
+
+kir_variantscore_colnames <- c("hgvs", "A_SE", "A_epsilon", "A_score", "S_SE", "S_epsilon", "S_score", "SA_SE", "SA_epsilon", "SA_score")
+kir_variantscore_coltypes <- c("character", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric")
+
+kir_scores <- read_delim(kir_scores_file, col_names = kir_variantscore_colnames, skip=3)
+kir_scores <- process_hgvs_df(kir_scores)
+kir_scores$is.wt = kir_scores$mutation_type == "S"
+kir_scores$delta_score = kir_scores$SA_score - kir_scores$A_score
+
+# Make this a long df rather than wide
+
+kir_scores_long <- kir_scores %>% 
+  pivot_longer(cols = ends_with("_score"), names_to="condition", names_pattern = "(.*)_score", values_to = "score") %>%
+  select(hgvs, pos, len, mutation_type, variants, score, condition)
+
+# Read Kir2.1 amplicon sequencing file to find spectrum of designed and non-desired mutations
+Kir21_AEZ_c1_file = '../data/counts/Kir21_AEZ/Kir_c1.csv'
+Kir21_AEZ_c1 <- read_csv(Kir21_AEZ_c1_file, skip = 1, col_names = variantCounts_colnames, col_types=variantCounts_cotypes)
+
+Kir21_AEZ_c2_file = '../data/counts/Kir21_AEZ/Kir_c2.csv'
+Kir21_AEZ_c2 <- read_csv(Kir21_AEZ_c1_file, skip = 1, col_names = variantCounts_colnames, col_types=variantCounts_cotypes)
+
+Kir21_AEZ_c3_file = '../data/counts/Kir21_AEZ/Kir_c3.csv'
+Kir21_AEZ_c3 <- read_csv(Kir21_AEZ_c3_file, skip = 1, col_names = variantCounts_colnames, col_types=variantCounts_cotypes)
+
+Kir21_AEZ_c4_file = '../data/counts/Kir21_AEZ/Kir_c4.csv'
+Kir21_AEZ_c4 <- read_csv(Kir21_AEZ_c4_file, skip = 1, col_names = variantCounts_colnames, col_types=variantCounts_cotypes)
+
+Kir21_AEZ_c5b_file = '../data/counts/Kir21_AEZ/Kir_c5b.csv'
+Kir21_AEZ_c5b <- read_csv(Kir21_AEZ_c5b_file, skip = 1, col_names = variantCounts_colnames, col_types=variantCounts_cotypes)
+
+Kir21_AEZ_c5a_file = '../data/counts/Kir21_AEZ/Kir_c5a.csv'
+Kir21_AEZ_c5a <- read_csv(Kir21_AEZ_c5a_file, skip = 1, col_names = variantCounts_colnames, col_types=variantCounts_cotypes)
+
+Kir21_AEZ_c6a_file = '../data/counts/Kir21_AEZ/Kir_c6a.csv'
+Kir21_AEZ_c6a <- read_csv(Kir21_AEZ_c6a_file, skip = 1, col_names = variantCounts_colnames, col_types=variantCounts_cotypes)
+
+Kir21_AEZ_c6b_file = '../data/counts/Kir21_AEZ/Kir_c6b.csv'
+Kir21_AEZ_c6b <- read_csv(Kir21_AEZ_c6b_file, skip = 1, col_names = variantCounts_colnames, col_types=variantCounts_cotypes)
+
+Kir21_AEZ_c7_file = '../data/counts/Kir21_AEZ/Kir_c7.csv'
+Kir21_AEZ_c7 <- read_csv(Kir21_AEZ_c7_file, skip = 1, col_names = variantCounts_colnames, col_types=variantCounts_cotypes)
+
+Kir21_AEZ_c9_file = '../data/counts/Kir21_AEZ/Kir_c7.csv'
+Kir21_AEZ_c9 <- read_csv(Kir21_AEZ_c9_file, skip = 1, col_names = variantCounts_colnames, col_types=variantCounts_cotypes)
+
+Kir21_AEZ_c8a_file = '../data/counts/Kir21_AEZ/Kir_c8a.csv'
+Kir21_AEZ_c8a <- read_csv(Kir21_AEZ_c8a_file, skip = 1, col_names = variantCounts_colnames, col_types=variantCounts_cotypes)
+
+Kir21_AEZ_c8b_file = '../data/counts/Kir21_AEZ/Kir_c8b.csv'
+Kir21_AEZ_c8b <- read_csv(Kir21_AEZ_c8b_file, skip = 1, col_names = variantCounts_colnames, col_types=variantCounts_cotypes)
+```
+
+
+Figure 4 - heatmap - Surface
+
+# TODO: make this 1-99, 100-199, rather than 1-100?
+# TODO: add secondary structure annotation?
+# TODO: add HMM logo?
+# TODO: annotate with variants of known significance from gnomad?
+
+# TODO: add a break between indels and substitutions?
+
+```{r}
+
+order <- c('D_3','D_2','D_1','I_3','I_2','I_1','H', 'K', 'R', 'D', 'E',
+          'C','M','N','Q','S','T','A','I','L','V','W','F',
+          'Y','G','P')
+
+variant_names <- c("Del x3",'Del x2','Del x1','Ins x3 (GSG)','Ins x (GS)','Ins x1 (G)','H', 'K', 'R', 'D', 'E',
+          'C','M','N','Q','S','T','A','I','L','V','W','F',
+          'Y','G','P')
+
+kir_wt_1 = str_split(substr(kir21_wt, 1, 150), '')[[1]]
+kir_wt_2 = str_split(substr(kir21_wt, 151, 300), '')[[1]]
+kir_wt_3 = str_split(substr(kir21_wt, 301, 440), '')[[1]]
+
+#surface plot
+Surface_row1 = ggplot(data = kir_scores[kir_scores$pos %in% c(2:150),], 
+                      aes(x = pos, y = factor(variants, level = order, labels = variant_names), fill = S_score )) +
+  geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=FALSE, na.value = 'lightyellow',limits=c(-5,3)) + 
+  scale_color_manual(values = c(NA,'green')) +
+  scale_x_continuous(breaks = seq(0, 400, by = 5),
+                     expand = c(0,0),
+                     sec.axis = sec_axis(
+                      trans = ~.,
+                      name = "Sequence",
+                      breaks = seq(1, 150),
+                      labels = kir_wt_1,
+                      guide = derive()
+                    )) +
+  coord_fixed(ratio = 1) +
+  theme(
+    panel.background = element_rect(fill = "white",
+                                    colour = "white",
+                                    size = 0.5, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                    colour = "lightgray"), 
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
+  ) +
+  labs(y = "Mutation", x = "Position")
+
+Surface_row2 = ggplot(data = kir_scores[kir_scores$pos %in% c(151:300),], 
+                      aes(x = pos, y = factor(variants, level = order, labels = variant_names), fill = S_score )) +
+  geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=FALSE, na.value = 'lightyellow',limits=c(-5,3)) + 
+  scale_color_manual(values = c(NA,'green')) +
+  scale_x_continuous(breaks = seq(0, 400, by = 5),
+                     expand = c(0,0),
+                     sec.axis = sec_axis(
+                      trans = ~.,
+                      name = "Sequence",
+                      breaks = seq(151, 300),
+                      labels = kir_wt_2,
+                      guide = derive()
+                    )) +
+  coord_fixed(ratio = 1) +
+  theme(
+    panel.background = element_rect(fill = "white",
+                                    colour = "white",
+                                    size = 0.5, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                    colour = "lightgray"), 
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
+  ) +
+  labs(y = "Mutation", x = "Position")
+
+Surface_row3 = ggplot(data = kir_scores[kir_scores$pos %in% c(301:440),], 
+                      aes(x = pos, y = factor(variants, level = order, labels = variant_names), fill = S_score )) +
+  geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=FALSE, na.value = 'lightyellow',limits=c(-5,3)) + 
+  scale_color_manual(values = c(NA,'green')) +
+  scale_x_continuous(breaks = seq(0, 440, by = 5),
+                     expand = c(0,0),
+                     sec.axis = sec_axis(
+                      trans = ~.,
+                      name = "Sequence",
+                      breaks = seq(301, 440),
+                      labels = kir_wt_3,
+                      guide = derive()
+                    )) +
+  coord_fixed(ratio = 1) +
+  theme(
+    panel.background = element_rect(fill = "white",
+                                    colour = "white",
+                                    size = 0.5, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                    colour = "lightgray"), 
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
+  ) +
+  labs(y = "Mutation", x = "Position")
+
+
+Surface_DMS = ggarrange(Surface_row1, Surface_row2, Surface_row3,
+                        nrow = 3, ncol = 1)
+ggsave("~/Desktop/dms_analysis/Plotting/Plots/Figures/4.pdf", height = 7, width = 8.5)
+ggsave("~/Desktop/dms_analysis/Plotting/Plots/Figures/4.png", height = 7, width = 8.5)
+
+
+```
+
+SI figure - plot SE of heatmap
+
+```{r}
+
+order <- c('D_3','D_2','D_1','I_3','I_2','I_1','H', 'K', 'R', 'D', 'E',
+          'C','M','N','Q','S','T','A','I','L','V','W','F',
+          'Y','G','P')
+
+variant_names <- c("Del x3",'Del x2','Del x1','Ins x3 (GSG)','Ins x (GS)','Ins x1 (G)','H', 'K', 'R', 'D', 'E',
+          'C','M','N','Q','S','T','A','I','L','V','W','F',
+          'Y','G','P')
+
+kir_wt_1 = str_split(substr(kir21_wt, 1, 150), '')[[1]]
+kir_wt_2 = str_split(substr(kir21_wt, 151, 300), '')[[1]]
+kir_wt_3 = str_split(substr(kir21_wt, 301, 440), '')[[1]]
+
+#surface plot
+Surface_row1 = ggplot(data = kir_scores[kir_scores$pos %in% c(2:150),], 
+                      aes(x = pos, y = factor(variants, level = order, labels = variant_names), fill = S_SE )) +
+  geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=FALSE, na.value = 'lightyellow',limits=c(-5,3)) + 
+  scale_color_manual(values = c(NA,'green')) +
+  scale_x_continuous(breaks = seq(0, 400, by = 5),
+                     expand = c(0,0),
+                     sec.axis = sec_axis(
+                      trans = ~.,
+                      name = "Sequence",
+                      breaks = seq(1, 150),
+                      labels = kir_wt_1,
+                      guide = derive()
+                    )) +
+  coord_fixed(ratio = 1) +
+  theme(
+    panel.background = element_rect(fill = "white",
+                                    colour = "white",
+                                    size = 0.5, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                    colour = "lightgray"), 
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
+  ) +
+  labs(y = "Mutation", x = "Position")
+
+Surface_row2 = ggplot(data = kir_scores[kir_scores$pos %in% c(151:300),], 
+                      aes(x = pos, y = factor(variants, level = order), fill = S_SE)) +
+  geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=FALSE, na.value = 'lightyellow',limits=c(-5,3)) + 
+  scale_color_manual(values = c(NA,'green')) +
+  scale_x_continuous(breaks = seq(0, 400, by = 5),
+                     expand = c(0,0),
+                     sec.axis = sec_axis(
+                      trans = ~.,
+                      name = "Sequence",
+                      breaks = seq(151, 300),
+                      labels = kir_wt_2,
+                      guide = derive()
+                    )) +
+  coord_fixed(ratio = 1) +
+  theme(
+    panel.background = element_rect(fill = "white",
+                                    colour = "white",
+                                    size = 0.5, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                    colour = "lightgray"), 
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
+  ) +
+  labs(y = "Mutation", x = "Position")
+
+Surface_row3 = ggplot(data = kir_scores[kir_scores$pos %in% c(301:440),], 
+                      aes(x = pos, y = factor(variants, level = order), fill = S_SE)) +
+  geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=FALSE, na.value = 'lightyellow',limits=c(-5,3)) + 
+  scale_color_manual(values = c(NA,'green')) +
+  scale_x_continuous(breaks = seq(0, 440, by = 5),
+                     expand = c(0,0),
+                     sec.axis = sec_axis(
+                      trans = ~.,
+                      name = "Sequence",
+                      breaks = seq(301, 440),
+                      labels = kir_wt_3,
+                      guide = derive()
+                    )) +
+  coord_fixed(ratio = 1) +
+  theme(
+    panel.background = element_rect(fill = "white",
+                                    colour = "white",
+                                    size = 0.5, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                    colour = "lightgray"), 
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
+  ) +
+  labs(y = "Mutation", x = "Position")
+
+
+Surface_DMS_SE = ggarrange(Surface_row1, Surface_row2, Surface_row3,
+                        nrow = 3, ncol = 1)
+
+ggsave("~/Desktop/dms_analysis/Plotting/Plots/Figures/SI_heatmap_SE.pdf", height = 7, width = 8.5)
+ggsave("~/Desktop/dms_analysis/Plotting/Plots/Figures/SI_heatmap_SE.png", height = 7, width = 8.5)
+
+```

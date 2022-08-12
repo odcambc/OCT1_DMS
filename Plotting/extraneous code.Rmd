@@ -1,0 +1,228 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+
+
+
+
+2D plot of 1 vs 2 deletions
+
+```{r}
+
+ggplot(data=indel_scores) +
+  geom_point( aes(x=D_1, y=D_2, color = D_3) ) +
+  geom_abline(slope=1, intercept=0, linetype=3) +
+  geom_hline(yintercept=0, linetype=2) +
+  geom_vline(xintercept=0, linetype=2) +
+  coord_fixed(ratio=1) +
+  theme_classic()
+
+ggplot(data=indel_scores) +
+  geom_point( aes(x=D_2, y=D_3)) +
+  geom_abline(slope=1, intercept=0, linetype=3) +
+  geom_hline(yintercept=0, linetype=2) +
+  geom_vline(xintercept=0, linetype=2) +
+  coord_fixed(ratio=1) +
+  theme_classic()
+
+ggplot(data=indel_scores) +
+  geom_point( aes(x=I_1, y=I_2, color = I_3) ) +
+  geom_abline(slope=1, intercept=0, linetype=3) +
+  geom_hline(yintercept=0, linetype=2) +
+  geom_vline(xintercept=0, linetype=2) +
+  coord_fixed(ratio=1) +
+  theme_classic()
+
+#ggplot(data=indel_scores) +
+#  geom_density(aes(x=(D_3 - D_1))) +
+#  geom_vline(xintercept=0, linetype=2) +
+#  theme_classic()
+```
+
+
+```{r}
+shifted_indels <-
+  full_join(
+    full_join(
+      full_join(
+        aligned_kir_scores %>% filter(variants == "D_1") %>% mutate(pos = pos, len = -1 * strtoi(len), .keep = "all"),
+        aligned_kir_scores %>% filter(variants == "D_2") %>% mutate(pos = pos + 1, len = -1 * strtoi(len), .keep = "all")),
+      aligned_kir_scores %>% filter(variants == "D_3") %>% mutate(pos = pos + 2, len = -1 * strtoi(len), .keep = "all")),
+    aligned_kir_scores %>% filter(mutation_type == "I") %>% mutate(pos = pos, len = strtoi(len), .keep = "all"))
+
+
+indel_correlations_S <- shifted_indels %>% filter(pos > 3 & pos < 423) %>%
+  group_by(pos) %>%
+  summarize(Correlation = cor(S_score, len), SS = first(SS)) %>%
+                              mutate(SS = replace(SS, SS == " ", "C")) %>%
+                              mutate(SS = replace(SS, SS == "G", "H")) %>%
+                              mutate(SS = replace(SS, SS == "I", "H")) %>%
+                              mutate(SS = replace(SS, SS == "S", "C")) %>%
+                              mutate(SS = replace(SS, SS == "T", "C")) %>%
+                              mutate(SS = replace(SS, SS == "E", "B"))
+
+
+ss <- ss %>% mutate(SS = replace(SS, SS == " ", "C")) %>%
+                              mutate(SS = replace(SS, SS == "G", "H")) %>%
+                              mutate(SS = replace(SS, SS == "I", "H")) %>%
+                              mutate(SS = replace(SS, SS == "S", "C")) %>%
+                              mutate(SS = replace(SS, SS == "T", "C")) %>%
+                              mutate(SS = replace(SS, SS == "E", "B"))
+
+indel_scores <- kir_scores %>% filter(mutation_type == "D" | mutation_type == "I") %>% arrange(pos) %>% group_by(pos) %>%
+    pivot_wider(id_cols = c(pos), names_from = variants,
+                values_from = S_score,
+                values_fill = 0,
+                names_expand = TRUE)
+
+indel_scores_long <- indel_scores_long %>% mutate(SS = replace(SS, SS == " ", "C")) %>%
+                      mutate(SS = replace(SS, SS == "G", "H")) %>%
+                      mutate(SS = replace(SS, SS == "I", "H")) %>%
+                      mutate(SS = replace(SS, SS == "E", "B"))
+
+ View(
+   aligned_kir_scores %>% filter(mutation_type == "D" | mutation_type == "I") %>% arrange(pos) %>% group_by(pos) %>%
+    pivot_wider(id_cols = c(pos), names_from = variants,
+                values_from = S_score,
+                values_fill = 0,
+                names_expand = TRUE)
+ )
+```
+
+SI 9 A - Plot correlations between secondary structure and indels
+
+```{r}
+plot <- ggplot(
+  data = indel_scores_long %>% filter(!is.na(SS)) %>%
+                              mutate(SS = replace(SS, SS == " ", "C")) %>%
+                              mutate(SS = replace(SS, SS == "G", "H")) %>%
+                              mutate(SS = replace(SS, SS == "I", "H")) %>%
+                              mutate(SS = replace(SS, SS == "E", "B"))
+  ) +
+  facet_grid(rows = vars(factor(SS, levels=SS_level))) +
+  geom_density(aes(x = score, color = type), size=1) +
+  xlab("Enrich2 score") + 
+  ylab("Density") + 
+  geom_vline(xintercept = 0, linetype="dotted") +
+  theme_classic() + 
+  scale_color_manual(values=cbp1) +
+  labs(color = "Mutation type")
+
+ggsave("~/Desktop/dms_analysis/Plotting/Plots/Figures/SI9A_SS_DFE_indels.png", height = 7, width = 5)
+ggsave("~/Desktop/dms_analysis/Plotting/Plots/Figures/SI9A_SS_DFE_indels.pdf", height = 7, width = 5)
+```
+
+Calculate correlations between length of indel and average fitness effects
+
+```{r}
+shifted_indels_delta <- shifted_indels %>% pivot_wider(id_cols = c(pos), names_from = variants,
+          values_from = S_score,
+          values_fill = NA,
+          names_expand = TRUE) %>%
+  mutate(d3_d2 = D_3 - D_2,
+       d3_d1 = D_3 - D_1,
+       d3_i1 = D_3 - I_1,
+       d3_i2 = D_3 - I_2,
+       d3_i3 = D_3 - I_3) %>%
+  pivot_longer(!pos, names_to = "mutation_type")
+
+kir_scores <- full_join(kir_scores, data.frame(sse_list), by.x ='pos') %>% 
+                      mutate(SS = replace(SS, SS == " ", "C")) %>%
+                      mutate(SS = replace(SS, SS == "G", "H")) %>%
+                      mutate(SS = replace(SS, SS == "I", "H")) %>%
+                      mutate(SS = replace(SS, SS == "E", "B"))
+
+```
+
+
+Other plots
+```{r}
+plot <- ggplot(aligned_kir_scores %>% filter(mutation_type == "D")) + 
+    geom_line(aes(x=pos, y=S_score, color=len)) +
+    labs(x = "Position", color = "Indels", y="Average surface score") + 
+    scale_x_continuous(breaks=c(1, 50, 100, 150, 200, 250, 300, 350, 400)) +
+    theme_classic() +
+    scale_color_brewer(
+    type = "qual",
+    palette = 'Pastel1',
+    direction = -1,
+  ) + 
+  geom_hline(yintercept=0, linetype="dotted") +
+  geom_line(data = pfam_scores, aes(x=pos, y=value, color=mutation_type))
+
+#print(plot)
+   
+#ggsave("~/Desktop/dms_analysis/Plotting/Plots/Figures/3B_D123.pdf", height = 5, width = 10)
+
+
+ggplot(data = indel_scores) +
+  scale_x_continuous(breaks=c(1, 50,100, 150, 200, 250, 300, 350, 400)) +
+  geom_line(aes(pos, D_1), linetype=1) +
+  geom_line(aes(pos, D_2), linetype=2) +
+  geom_hline(yintercept=0) +
+  geom_braid(aes(pos, ymin = D_1, ymax = D_2, fill = D_2 < D_1), alpha = 0.2, show.legend=TRUE) +
+  xlab("Position") + ylab("Surface score") +
+  theme_classic()
+
+#ggsave("~/Desktop/dms_analysis/Plotting/Plots/Figures/3B_D12_braid.pdf", height = 5, width = 10)
+
+
+ggplot(data = indel_scores) +
+  scale_x_continuous(breaks=c(1, 50,100, 150, 200, 250, 300, 350, 400)) +
+  geom_line(aes(pos, D_2), linetype=1) +
+  geom_line(aes(pos, D_3), linetype=2) +
+  geom_hline(yintercept=0) +
+  geom_braid(aes(pos, ymin = D_2, ymax = D_3, fill = D_3 < D_2), alpha = 0.2, show.legend=TRUE) +
+  xlab("Position") + ylab("Surface score") +
+  theme_classic()
+
+#ggsave("~/Desktop/dms_analysis/Plotting/Plots/Figures/3B_D23_braid.pdf", height = 5, width = 10)
+
+ggplot(data = indel_scores) +
+  scale_x_continuous(breaks=c(1, 50,100, 150, 200, 250, 300, 350, 400)) +
+  geom_line(aes(pos, D_1), linetype=1) +
+  geom_line(aes(pos, D_3), linetype=2) +
+  geom_hline(yintercept=0) +
+  geom_braid(aes(pos, ymin = D_1, ymax = D_3, fill = D_3 < D_1), alpha = 0.2, show.legend=TRUE) +
+  xlab("Position") + ylab("Surface score") +
+  theme_classic()
+
+#ggsave("~/Desktop/dms_analysis/Plotting/Plots/Figures/3B_D13_braid.pdf", height = 5, width = 10)
+
+ggplot(data = indel_scores) +
+  scale_x_continuous(breaks=c(1, 50,100, 150, 200, 250, 300, 350, 400)) +
+  geom_line(aes(pos, D_3 - D_1), linetype=1) +
+  geom_hline(yintercept=0) +
+  xlab("Position") + ylab("Surface score") +
+  theme_classic()
+
+ggplot(data = indel_scores) +
+  scale_x_continuous(breaks=c(1, 50,100, 150, 200, 250, 300, 350, 400)) +
+  geom_line(aes(pos, D_2 - D_1), linetype=1) +
+  geom_hline(yintercept=0) +
+  xlab("Position") + ylab("Surface score") +
+  theme_classic()
+
+ggplot(data = indel_scores) +
+  scale_x_continuous(breaks=c(1, 50,100, 150, 200, 250, 300, 350, 400)) +
+  geom_line(aes(pos, D_3 - D_2), linetype=1) +
+  geom_hline(yintercept=0) +
+  xlab("Position") + ylab("Surface score") +
+  theme_classic()
+
+ggplot(data = indel_scores) +
+  scale_x_continuous(breaks=c(1, 50,100, 150, 200, 250, 300, 350, 400)) +
+  geom_line(aes(pos, I_1), linetype=1) +
+  geom_line(aes(pos, I_3), linetype=2) +
+  geom_hline(yintercept=0) +
+  geom_braid(aes(pos, ymin = I_1, ymax = I_3, fill = I_3 < I_1), alpha = 0.2, show.legend=TRUE) +
+  xlab("Position") + ylab("Surface score") +
+  theme_classic()
+```

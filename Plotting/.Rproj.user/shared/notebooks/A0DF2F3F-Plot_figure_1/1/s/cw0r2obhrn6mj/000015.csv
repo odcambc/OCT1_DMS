@@ -1,0 +1,18 @@
+"0",""
+"0","ggsave(""~/Desktop/dms_analysis/Plotting/Plots/Figures/SI5_TRPV1_bar.pdf"", height = 5, width = 10, plot_bar_TRPV1)"
+"2","Warning:"
+"2"," position_stack requires non-overlapping x intervals
+"
+"0","ggsave(""~/Desktop/dms_analysis/Plotting/Plots/Figures/SI5_TRPV1_box.pdf"", height = 5, width = 10, plot_box_TRPV1)"
+"2","Warning:"
+"2"," Removed 4675 rows containing non-finite values (stat_boxplot).
+"
+"2","Warning:"
+"2"," Removed 4675 rows containing non-finite values (stat_compare_means).
+"
+"0","ggsave(""~/Desktop/dms_analysis/Plotting/Plots/Figures/SI5_TRPV1_ridge.pdf"", height = 5, width = 10, plot_ridge_TRPV1)"
+"2","Picking joint bandwidth of 4.84
+"
+"2","Warning:"
+"2"," Removed 46 rows containing non-finite values (stat_density_ridges).
+"

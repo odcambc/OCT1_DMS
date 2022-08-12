@@ -1,0 +1,14 @@
+"0","    plot <- trpv1_9_17 %>% filter(mutation_type != ""S"" & pos > 339) %>% "
+"0","      mutate(pos = pos - 339) %>%"
+"0","      ggplot(aes(x=pos, y=count, fill=mutation_type)) +"
+"0","      scale_x_continuous(limits = c(0, 100)) + "
+"0","      geom_bar(stat=""identity"") +"
+"0","    theme_classic()"
+"0",""
+"0","  print(plot)"
+"2","Warning:"
+"2"," Removed 9971 rows containing missing values (position_stack).
+"
+"2","Warning:"
+"2"," Removed 25 rows containing missing values (geom_bar).
+"

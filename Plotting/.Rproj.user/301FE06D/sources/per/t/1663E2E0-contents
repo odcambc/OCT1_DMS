@@ -1,0 +1,490 @@
+---
+title: "VatD plotting"
+output: html_notebook
+---
+
+
+```{r}
+library(ggplot2)
+library(gglorenz)
+library(readr)
+library(stringr)
+library(dplyr)
+library(hrbrthemes)
+library(tidyverse)
+library(ggthemes)
+library(ggridges)
+library(ggmsa)
+library(colorspace)
+library(bio3d)
+library(corrplot)
+library(ggpubr)
+source("dms_analysis_utilities.R")
+```
+
+
+
+```{r}
+# Enrich2 score files
+vatd_scores_file = "../data/Enrich2/vatd/tsv/vatd_exp/main_identifiers_scores.tsv"
+
+vatd_variantscore_colnames <- c("hgvs", "SE_0", "epsilon_0", "score_0", "SE_016", "epsilon_016", "score_016", "SE_25", "epsilon_25", "score_25", "SE_5", "epsilon_5", "score_5")
+vatd_variantscore_coltypes <- c("character", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric")
+
+vatd_scores <- read_delim(vatd_scores_file, col_names = vatd_variantscore_colnames, skip=3)
+vatd_scores <- process_hgvs_df(vatd_scores)
+
+vatd_scores$is.wt = vatd_scores$mutation_type == "S"
+
+
+vatd_scores_long <- vatd_scores %>% 
+  pivot_longer(cols = starts_with("score"), names_to="VM2", names_prefix="score_", values_to = "score") %>%
+  select(hgvs, pos, len, mutation_type, variants, score, VM2) %>%
+  mutate(VM2 = recode(VM2, "0" = 0, "016" = 0.16, "25" = 2.5, "5" = 5), .keep="all")
+
+# Load the VatD sequence
+
+vatd_wt_fasta = "VatD.fasta"
+
+con=file(vatd_wt_fasta,open="r")
+vatd_wt = readLines(con)[2]
+close(con)
+
+# Load the VatD secondary structure
+
+vatd_1khr_SS_fasta = "~/Desktop/VatX/1khr_ss.fasta"
+
+con=file(vatd_1khr_SS_fasta,open="r")
+vatd_1khr_ss = readLines(con)[2]
+close(con)
+```
+
+
+```{r}
+order <- c('D_3','D_2','D_1','I_3','I_2','I_1','H', 'K', 'R', 'D', 'E',
+          'C','M','N','Q','S','T','A','I','L','V','W','F',
+          'Y','G','P')
+
+variant_names <- c("Del x3",'Del x2','Del x1','Ins x3 (GSG)','Ins x (GS)','Ins x1 (G)','H', 'K', 'R', 'D', 'E',
+          'C','M','N','Q','S','T','A','I','L','V','W','F',
+          'Y','G','P')
+
+vatd_wt_1 = str_split(substr(vatd_wt, 1, 110), '')[[1]]
+vatd_wt_2 = str_split(substr(vatd_wt, 111, 209), '')[[1]]
+
+vatd_ss_1 = str_split(substr(vatd_1khr_ss, 1, 110), '')[[1]]
+vatd_ss_2 = str_split(substr(vatd_1khr_ss, 111, 209), '')[[1]]
+
+
+#surface plot
+vm2_0_row1 = ggplot(data = vatd_scores[vatd_scores$pos %in% c(1:110),], 
+                      aes(x = pos, y = factor(variants, level = order, labels = variant_names), fill = score_0 )) +
+  geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=FALSE, na.value = 'lightyellow',limits=c(-1,2)) + 
+  scale_color_manual(values = c(NA,'green')) +
+  scale_x_continuous(breaks = seq(0, 400, by = 5),
+                     expand = c(0,0),
+                     sec.axis = sec_axis(
+                      trans = ~.,
+                      name = "Sequence",
+                      breaks = seq(1, 110),
+                      labels = vatd_wt_1,
+                      guide = derive()
+                    )) +
+  coord_fixed(ratio = 1) +
+  theme(
+    panel.background = element_rect(fill = "white",
+                                    colour = "white",
+                                    size = 0.5, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                    colour = "lightgray"), 
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
+  ) +
+  labs(y = "Mutation", x = "Position")
+
+vm2_0_row2 = ggplot(data = vatd_scores[vatd_scores$pos %in% c(111:209),], 
+                      aes(x = pos, y = factor(variants, level = order, labels = variant_names), fill = score_0 )) +
+  geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=FALSE, na.value = 'lightyellow',limits=c(-1,2)) + 
+  scale_color_manual(values = c(NA,'green')) +
+  scale_x_continuous(breaks = seq(0, 400, by = 5),
+                     expand = c(0,0),
+                     sec.axis = sec_axis(
+                      trans = ~.,
+                      name = "Sequence",
+                      breaks = seq(111, 209),
+                      labels = vatd_wt_2,
+                      guide = derive()
+                    )) +
+  coord_fixed(ratio = 1) +
+  theme(
+    panel.background = element_rect(fill = "white",
+                                    colour = "white",
+                                    size = 0.5, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                    colour = "lightgray"), 
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
+  ) +
+  labs(y = "Mutation", x = "Position")
+
+vatd_0_vm2 = ggarrange(vm2_0_row1, vm2_0_row2,
+                        nrow = 2, ncol = 1)
+
+ggsave("~/Desktop/dms_analysis/Plotting/Plots/VM2_0.pdf", height = 7, width = 8.5)
+ggsave("~/Desktop/dms_analysis/Plotting/Plots/VM2_0.png", height = 7, width = 8.5)
+
+
+```
+
+```{r}
+
+order <- c('D_3','D_2','D_1','I_3','I_2','I_1','H', 'K', 'R', 'D', 'E',
+          'C','M','N','Q','S','T','A','I','L','V','W','F',
+          'Y','G','P')
+
+variant_names <- c("Del x3",'Del x2','Del x1','Ins x3 (GSG)','Ins x (GS)','Ins x1 (G)','H', 'K', 'R', 'D', 'E',
+          'C','M','N','Q','S','T','A','I','L','V','W','F',
+          'Y','G','P')
+
+vatd_wt_1 = str_split(substr(vatd_wt, 1, 110), '')[[1]]
+vatd_wt_2 = str_split(substr(vatd_wt, 111, 209), '')[[1]]
+
+vatd_ss_1 = str_split(substr(vatd_1khr_ss, 1, 110), '')[[1]]
+vatd_ss_2 = str_split(substr(vatd_1khr_ss, 111, 209), '')[[1]]
+
+
+#surface plot
+vm2_016_row1 = ggplot(data = vatd_scores[vatd_scores$pos %in% c(1:110),], 
+                      aes(x = pos, y = factor(variants, level = order, labels = variant_names), fill = score_016 )) +
+  geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=FALSE, na.value = 'lightyellow',limits=c(-3,2)) + 
+  scale_color_manual(values = c(NA,'green')) +
+  scale_x_continuous(breaks = seq(0, 400, by = 5),
+                     expand = c(0,0),
+                     sec.axis = sec_axis(
+                      trans = ~.,
+                      name = "Sequence",
+                      breaks = seq(1, 110),
+                      labels = vatd_wt_1,
+                      guide = derive()
+                    )) +
+  coord_fixed(ratio = 1) +
+  theme(
+    panel.background = element_rect(fill = "white",
+                                    colour = "white",
+                                    size = 0.5, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                    colour = "lightgray"), 
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
+  ) +
+  labs(y = "Mutation", x = "Position")
+
+vm2_016_row2 = ggplot(data = vatd_scores[vatd_scores$pos %in% c(111:209),], 
+                      aes(x = pos, y = factor(variants, level = order, labels = variant_names), fill = score_016 )) +
+  geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=FALSE, na.value = 'lightyellow',limits=c(-3,2)) + 
+  scale_color_manual(values = c(NA,'green')) +
+  scale_x_continuous(breaks = seq(0, 400, by = 5),
+                     expand = c(0,0),
+                     sec.axis = sec_axis(
+                      trans = ~.,
+                      name = "Sequence",
+                      breaks = seq(111, 209),
+                      labels = vatd_wt_2,
+                      guide = derive()
+                    )) +
+  coord_fixed(ratio = 1) +
+  theme(
+    panel.background = element_rect(fill = "white",
+                                    colour = "white",
+                                    size = 0.5, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                    colour = "lightgray"), 
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
+  ) +
+  labs(y = "Mutation", x = "Position")
+
+vatd_016_vm2 = ggarrange(vm2_016_row1, vm2_016_row2,
+                        nrow = 2, ncol = 1)
+
+ggsave("~/Desktop/dms_analysis/Plotting/Plots/VM2_016.pdf", height = 7, width = 8.5)
+ggsave("~/Desktop/dms_analysis/Plotting/Plots/VM2_016.png", height = 7, width = 8.5)
+
+```
+
+```{r}
+
+order <- c('D_3','D_2','D_1','I_3','I_2','I_1','H', 'K', 'R', 'D', 'E',
+          'C','M','N','Q','S','T','A','I','L','V','W','F',
+          'Y','G','P')
+
+variant_names <- c("Del x3",'Del x2','Del x1','Ins x3 (GSG)','Ins x (GS)','Ins x1 (G)','H', 'K', 'R', 'D', 'E',
+          'C','M','N','Q','S','T','A','I','L','V','W','F',
+          'Y','G','P')
+
+vatd_wt_1 = str_split(substr(vatd_wt, 1, 110), '')[[1]]
+vatd_wt_2 = str_split(substr(vatd_wt, 111, 209), '')[[1]]
+
+vatd_ss_1 = str_split(substr(vatd_1khr_ss, 1, 110), '')[[1]]
+vatd_ss_2 = str_split(substr(vatd_1khr_ss, 111, 209), '')[[1]]
+
+vm2_25_row1 = ggplot(data = vatd_scores[vatd_scores$pos %in% c(1:110),], 
+                      aes(x = pos, y = factor(variants, level = order, labels = variant_names), fill = score_25 )) +
+  geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=FALSE, na.value = 'lightyellow',limits=c(-5,2)) + 
+  scale_color_manual(values = c(NA,'green')) +
+  scale_x_continuous(breaks = seq(0, 400, by = 5),
+                     expand = c(0,0),
+                     sec.axis = sec_axis(
+                      trans = ~.,
+                      name = "Sequence",
+                      breaks = seq(1, 110),
+                      labels = vatd_wt_1,
+                      guide = derive()
+                    )) +
+  coord_fixed(ratio = 1) +
+  theme(
+    panel.background = element_rect(fill = "white",
+                                    colour = "white",
+                                    size = 0.5, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                    colour = "lightgray"), 
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
+  ) +
+  labs(y = "Mutation", x = "Position")
+
+vm2_25_row2 = ggplot(data = vatd_scores[vatd_scores$pos %in% c(111:209),], 
+                      aes(x = pos, y = factor(variants, level = order, labels = variant_names), fill = score_25 )) +
+  geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=FALSE, na.value = 'lightyellow',limits=c(-5,2)) + 
+  scale_color_manual(values = c(NA,'green')) +
+  scale_x_continuous(breaks = seq(0, 400, by = 5),
+                     expand = c(0,0),
+                     sec.axis = sec_axis(
+                      trans = ~.,
+                      name = "Sequence",
+                      breaks = seq(111, 209),
+                      labels = vatd_wt_2,
+                      guide = derive()
+                    )) +
+  coord_fixed(ratio = 1) +
+  theme(
+    panel.background = element_rect(fill = "white",
+                                    colour = "white",
+                                    size = 0.5, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                    colour = "lightgray"), 
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
+  ) +
+  labs(y = "Mutation", x = "Position")
+
+vatd_25_vm2 = ggarrange(vm2_25_row1, vm2_25_row2,
+                        nrow = 2, ncol = 1)
+
+ggsave("~/Desktop/dms_analysis/Plotting/Plots/VM2_25.pdf", height = 7, width = 8.5)
+ggsave("~/Desktop/dms_analysis/Plotting/Plots/VM2_25.png", height = 7, width = 8.5)
+
+```
+
+```{r}
+
+order <- c('D_3','D_2','D_1','I_3','I_2','I_1','H', 'K', 'R', 'D', 'E',
+          'C','M','N','Q','S','T','A','I','L','V','W','F',
+          'Y','G','P')
+
+variant_names <- c("Del x3",'Del x2','Del x1','Ins x3 (GSG)','Ins x (GS)','Ins x1 (G)','H', 'K', 'R', 'D', 'E',
+          'C','M','N','Q','S','T','A','I','L','V','W','F',
+          'Y','G','P')
+
+vatd_wt_1 = str_split(substr(vatd_wt, 1, 110), '')[[1]]
+vatd_wt_2 = str_split(substr(vatd_wt, 111, 209), '')[[1]]
+
+vatd_ss_1 = str_split(substr(vatd_1khr_ss, 1, 110), '')[[1]]
+vatd_ss_2 = str_split(substr(vatd_1khr_ss, 111, 209), '')[[1]]
+
+#surface plot
+vm2_5_row1 = ggplot(data = vatd_scores[vatd_scores$pos %in% c(1:110),], 
+                      aes(x = pos, y = factor(variants, level = order, labels = variant_names), fill = score_5 )) +
+  geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=FALSE, na.value = 'lightyellow',limits=c(-5,2)) + 
+  scale_color_manual(values = c(NA,'green')) +
+  scale_x_continuous(breaks = seq(0, 400, by = 5),
+                     expand = c(0,0),
+                     sec.axis = sec_axis(
+                      trans = ~.,
+                      name = "Sequence",
+                      breaks = seq(1, 110),
+                      labels = vatd_wt_1,
+                      guide = derive()
+                    )) +
+  coord_fixed(ratio = 1) +
+  theme(
+    panel.background = element_rect(fill = "white",
+                                    colour = "white",
+                                    size = 0.5, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                    colour = "lightgray"), 
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
+  ) +
+  labs(y = "Mutation", x = "Position")
+
+vm2_5_row2 = ggplot(data = vatd_scores[vatd_scores$pos %in% c(111:209),], 
+                      aes(x = pos, y = factor(variants, level = order, labels = variant_names), fill = score_5 )) +
+  geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=FALSE, na.value = 'lightyellow',limits=c(-5,2)) + 
+  scale_color_manual(values = c(NA,'green')) +
+  scale_x_continuous(breaks = seq(0, 400, by = 5),
+                     expand = c(0,0),
+                     sec.axis = sec_axis(
+                      trans = ~.,
+                      name = "Sequence",
+                      breaks = seq(111, 209),
+                      labels = vatd_wt_2,
+                      guide = derive()
+                    )) +
+  coord_fixed(ratio = 1) +
+  theme(
+    panel.background = element_rect(fill = "white",
+                                    colour = "white",
+                                    size = 0.5, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                    colour = "lightgray"), 
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
+  ) +
+  labs(y = "Mutation", x = "Position")
+
+vatd_5_vm2 = ggarrange(vm2_5_row1, vm2_5_row2,
+                        nrow = 2, ncol = 1)
+
+ggsave("~/Desktop/dms_analysis/Plotting/Plots/VM2_5.pdf", height = 7, width = 8.5)
+ggsave("~/Desktop/dms_analysis/Plotting/Plots/VM2_5.png", height = 7, width = 8.5)
+
+```
+
+Try PCA?
+```{r}
+
+vatd_scores_wide_25 <- vatd_scores %>%
+  filter(mutation_type == 'M') %>%
+  pivot_wider(id_cols = pos, values_from = score_25, names_from = variants) %>%
+  replace(is.na(.), 0)
+
+vatd_scores_wide_25 <- vatd_scores_wide_25 %>%
+  arrange(pos) %>%
+  remove_rownames() %>% 
+  column_to_rownames(var = "pos")
+
+vatd_scores_wide_5 <- vatd_scores %>%
+  filter(mutation_type == 'M') %>%
+  pivot_wider(id_cols = pos, values_from = score_5, names_from = variants) %>%
+  replace(is.na(.), 0)
+
+vatd_scores_wide_5 <- vatd_scores_wide_5 %>%
+  arrange(pos) %>%
+  remove_rownames() %>% 
+  column_to_rownames(var = "pos")
+
+vatd_scores_wide_0 <- vatd_scores %>%
+  filter(mutation_type == 'M') %>%
+  pivot_wider(id_cols = pos, values_from = score_0, names_from = variants) %>%
+  replace(is.na(.), 0)
+
+vatd_scores_wide_0 <- vatd_scores_wide_0 %>%
+  arrange(pos) %>%
+  remove_rownames() %>% 
+  column_to_rownames(var = "pos")
+
+vatd_scores_wide_016 <- vatd_scores %>%
+  filter(mutation_type == 'M') %>%
+  pivot_wider(id_cols = pos, values_from = score_016, names_from = variants) %>%
+  replace(is.na(.), 0)
+
+vatd_scores_wide_016 <- vatd_scores_wide_016 %>%
+  arrange(pos) %>%
+  remove_rownames() %>% 
+  column_to_rownames(var = "pos")
+
+# Plots
+
+vatd_0.pr <- vatd_scores_wide_0 %>% prcomp(center = FALSE, scale = TRUE)
+
+plot(vatd_0.pr)
+biplot(vatd_0.pr, choices=c(1,2))
+biplot(vatd_0.pr, choices=c(2,3))
+
+corrplot(cor(vatd_scores_wide_0), type = "upper", order = "AOE", 
+         tl.col = "black", tl.srt = 45)
+
+vatd_016.pr <- vatd_scores_wide_016 %>% prcomp(center = FALSE, scale = TRUE)
+plot(vatd_016.pr)
+biplot(vatd_016.pr, choices=c(1,2))
+biplot(vatd_016.pr, choices=c(2,3))
+summary(vatd_016.pr)
+
+corrplot(cor(vatd_scores_wide_016), type = "upper", order = "AOE", 
+         tl.col = "black", tl.srt = 45)
+
+vatd_25.pr <- vatd_scores_wide_25 %>% prcomp(center = FALSE, scale = TRUE)
+
+plot(vatd_25.pr)
+biplot(vatd_25.pr)
+
+corrplot(cor(vatd_scores_wide_25), type = "upper", order = "AOE", 
+         tl.col = "black", tl.srt = 45)
+
+vatd_5.pr <- vatd_scores_wide_5 %>% prcomp(center = FALSE, scale = TRUE)
+
+plot(vatd_5.pr)
+biplot(vatd_5.pr)
+
+corrplot(cor(vatd_scores_wide_5), type = "upper", order = "AOE", 
+         tl.col = "black", tl.srt = 45)
+```

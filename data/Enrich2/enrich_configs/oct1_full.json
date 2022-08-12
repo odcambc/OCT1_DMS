@@ -1,0 +1,372 @@
+{
+  "conditions": [
+    {
+      "name": "0SM73", 
+      "selections": [
+        {
+          "libraries": [
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/Cy1a.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "T0_0SM73R1", 
+              "report filtered reads": false, 
+              "timepoint": 0
+            }, 
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/Cy2a.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "T1_0SM73R1", 
+              "report filtered reads": false, 
+              "timepoint": 2
+            }, 
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/A.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "T2_0SM73R1", 
+              "report filtered reads": false, 
+              "timepoint": 4
+            }, 
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/Cy6a.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "T3_0SM73R1", 
+              "report filtered reads": false, 
+              "timepoint": 6
+            }
+          ], 
+          "name": "0SM73R1"
+        }, 
+        {
+          "libraries": [
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/Cy1b.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "T0_0SM73R2", 
+              "report filtered reads": false, 
+              "timepoint": 0
+            }, 
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/Cy2b.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "T1_0SM73R2", 
+              "report filtered reads": false, 
+              "timepoint": 2
+            }, 
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/Cy4b.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "T2_0SM73R2", 
+              "report filtered reads": false, 
+              "timepoint": 4
+            }, 
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/Cy6b.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "T3_0SM73R2", 
+              "report filtered reads": false, 
+              "timepoint": 6
+            }
+          ], 
+          "name": "0SM73R2"
+        }, 
+        {
+          "libraries": [
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/C.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "T0_0SM73R3", 
+              "report filtered reads": false, 
+              "timepoint": 0
+            }, 
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/D.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "T1_0SM73R3", 
+              "report filtered reads": false, 
+              "timepoint": 2
+            }, 
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/Cy4c.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "T2_0SM73R3", 
+              "report filtered reads": false, 
+              "timepoint": 4
+            }
+          ], 
+          "name": "0SM73R3"
+        }
+      ]
+    }, 
+    {
+      "name": "1SM73", 
+      "selections": [
+        {
+          "libraries": [
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/Cy1a.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "T0_1SM73R1", 
+              "report filtered reads": false, 
+              "timepoint": 0
+            }, 
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/Cy3a.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "T1_1SM73R1", 
+              "report filtered reads": false, 
+              "timepoint": 2
+            }, 
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/Cy5a.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "T2_1SM73R1", 
+              "report filtered reads": false, 
+              "timepoint": 4
+            }, 
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/Cy7a.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "T3_1SM73R1", 
+              "report filtered reads": false, 
+              "timepoint": 6
+            }
+          ], 
+          "name": "1SM73R1"
+        }, 
+        {
+          "libraries": [
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/Cy1b.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "T0_1SM73R2", 
+              "report filtered reads": false, 
+              "timepoint": 0
+            }, 
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/Cy3b.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "T1_1SM73R2", 
+              "report filtered reads": false, 
+              "timepoint": 2
+            }, 
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/Cy5b.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "T2_1SM73R2", 
+              "report filtered reads": false, 
+              "timepoint": 4
+            }, 
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/Cy7b.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "T3_1SM73R2", 
+              "report filtered reads": false, 
+              "timepoint": 6
+            }
+          ], 
+          "name": "1SM73R2"
+        }, 
+        {
+          "libraries": [
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/C.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "T0_1SM73R3", 
+              "report filtered reads": false, 
+              "timepoint": 0
+            }, 
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/B.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "T1_1SM73R3", 
+              "report filtered reads": false, 
+              "timepoint": 2
+            }, 
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/Cy5c.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "T2_1SM73R3", 
+              "report filtered reads": false, 
+              "timepoint": 4
+            }
+          ], 
+          "name": "1SM73R3"
+        }
+      ]
+    }, 
+    {
+      "name": "GFP", 
+      "selections": [
+        {
+          "libraries": [
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/GFP4a.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "Gate1_GFPR1", 
+              "report filtered reads": false, 
+              "timepoint": 0
+            }, 
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/GFP3a.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "Gate2_GFPR1", 
+              "report filtered reads": false, 
+              "timepoint": 2
+            }, 
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/GFP2a.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "Gate3_GFPR1", 
+              "report filtered reads": false, 
+              "timepoint": 3
+            }, 
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/GFP1a.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "Gate4_GFPR1", 
+              "report filtered reads": false, 
+              "timepoint": 3
+            }
+          ], 
+          "name": "GFPR1"
+        }, 
+        {
+          "libraries": [
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/GFP4b.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "Gate1_GFPR2", 
+              "report filtered reads": false, 
+              "timepoint": 0
+            }, 
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/GFP3b.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "Gate2_GFPR2", 
+              "report filtered reads": false, 
+              "timepoint": 2
+            }, 
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/GFP2b.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "Gate3_GFPR2", 
+              "report filtered reads": false, 
+              "timepoint": 3
+            }, 
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/GFP1b.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "Gate4_GFPR2", 
+              "report filtered reads": false, 
+              "timepoint": 3
+            }
+          ], 
+          "name": "GFPR2"
+        }, 
+        {
+          "libraries": [
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/GFP4c.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "Gate1_GFPR3", 
+              "report filtered reads": false, 
+              "timepoint": 0
+            }, 
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/GFP3c.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "Gate2_GFPR3", 
+              "report filtered reads": false, 
+              "timepoint": 2
+            }, 
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/GFP2c.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "Gate3_GFPR3", 
+              "report filtered reads": false, 
+              "timepoint": 3
+            }, 
+            {
+              "counts file": "/Users/bartleby/Desktop/dms_analysis/data/OCT1_full/GFP1c.tsv", 
+              "identifiers": {
+                "min count": 2
+              }, 
+              "name": "Gate4_GFPR3", 
+              "report filtered reads": false, 
+              "timepoint": 3
+            }
+          ], 
+          "name": "GFPR3"
+        }
+      ]
+    }
+  ], 
+  "name": "OCT1_full", 
+  "output directory": "/Users/bartleby/Desktop/dms_analysis/data/Enrich2/Oct1_full"
+}

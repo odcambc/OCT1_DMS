@@ -1,0 +1,6 @@
+"0","  labs(x = ""Abundance"", y = ""(1 SM73) Function"") + "
+"0","  geom_hline(yintercept=0) + "
+"0","  geom_vline(xintercept=0) + "
+"0","  theme_classic()"
+"1","NULL
+"

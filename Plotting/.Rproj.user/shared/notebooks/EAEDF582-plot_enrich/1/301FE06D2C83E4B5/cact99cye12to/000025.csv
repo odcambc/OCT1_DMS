@@ -1,0 +1,42 @@
+"0","x = map_scores_pdb(vatd_1KHR, vatd_avg_scores, ""avg_5"", selection = chainsABC)
+"
+"1","
+ Call:  "
+"1",""
+"1","trim.pdb(pdb = input_pdb, selection)"
+"1",""
+"1","
+"
+"1","
+   Total Models#: 1
+     Total Atoms#: 5111,  XYZs#: 15333  Chains#: 3  (values: A B C)
+
+     Protein Atoms#: 4838  (residues/Calpha atoms#: 617)
+     Nucleic acid Atoms#: 0  (residues/phosphate atoms#: 0)
+
+     Non-protein/nucleic Atoms#: 273  (residues: 58)
+     Non-protein/nucleic resid values: [ COA (3), HOH (53), VIR (2) ]
+
+"
+"1","   Protein sequence:
+"
+"1",""
+"1","      MGPNPMKMYPIEGNKSVQFIKPILEKLENVEVGEYSYYDSKNGETFDKQILYHYPILNDK
+      LKIGKFCSIGPGVTIIMNGANHRMDGSTYPFNLFGNGWEKHMPKLDQLPIKGDTIIGNDV
+      WIGKDVVIMPGVKIGDGAIVAANSVVVKDIAPYMLAGGNPANEIKQRFDQDTINQLLDIK
+      WWNWPIDIINENIDKILDNSIIREVIMGPNPMKMYPIEGNKSVQF...<cut>...REVI"
+"1",""
+"1","
+
+"
+"1","+ attr: atom, helix, sheet, seqres, xyz,"
+"1","
+"
+"1","        calpha, call"
+"1","
+"
+"2","Warning in seq_len(dim(output_pdb$atom[1])) :"
+"2","
+ "
+"2"," first element used of 'length.out' argument
+"

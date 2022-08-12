@@ -1,0 +1,217 @@
+---
+title: "Library counts plotting"
+output: html_notebook
+---
+
+Reads the output from the mapping and processing workflow and generates plots
+for a dataframe.
+
+```{r}
+library(ggplot2)
+library(gglorenz)
+library(readr)
+library(stringr)
+library(dplyr)
+library(tidyverse)
+
+order <- c("A", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L",
+           "M", "N", "P", "Q", "R", "S", "T", "V", "W", "Y",
+           "D_1", "D_2", "D_3",
+           "I_1", "I_2", "I_3", "X")
+
+# In codons
+vatd_chunk_starts = c(1, 42, 85, 127, 169)
+vatd_chunk_ends = c(41, 84, 126, 168, 209)
+vatd_chunks = mapply(c, vatd_chunk_starts, vatd_chunk_ends, SIMPLIFY=FALSE)
+
+kir21_chunk_starts = c(1, 49, 99, 148, 197, 246, 293, 341, 389)
+kir21_chunk_ends = c(48, 98, 147, 196, 245, 292, 340, 388, 436)
+kir21_chunks = mapply(c, kir21_chunk_starts, kir21_chunk_ends, SIMPLIFY=FALSE)
+
+TRPV1_chunk_starts = c(1, 50, 101, 151, 201, 251, 300, 349, 398, 447, 496, 545, 594, 643, 692, 741, 791)
+TRPV1_chunk_ends = c(49, 100, 150, 200, 250, 299, 348, 397, 446, 495, 544, 593, 642, 691, 740, 790, 838)
+TRPV1_chunks = mapply(c, TRPV1_chunk_starts, TRPV1_chunk_ends, SIMPLIFY=FALSE)
+
+# Importing
+
+variantCounts_colnames <- c("count", "pos", "chunk_pos", "chunk", "mutation_type", "name", "codon", "variants", "length", "hgvs")
+
+variantCounts_cotypes = "_iiiicccccc"
+
+#baseline_file = 'data/counts/Kir21/baseline.csv'
+#baseline <- read_csv(baseline_file, skip = 1, col_names = variantCounts_colnames, col_types=variantCounts_cotypes)
+
+#trpv1_hf1_file = 'data/counts/TRPV1/HF1.csv'
+#trpv1_hf1 <- read_csv(trpv1_hf1_file, skip = 1, col_names = variantCounts_colnames, col_types=variantCounts_cotypes)
+#trpv1_hf2_file = 'data/counts/TRPV1/HF2.csv'
+#trpv1_hf2 <- read_csv(trpv1_hf2_file, skip = 1, col_names = variantCounts_colnames, col_types=variantCounts_cotypes)
+
+#TRPV1_variants <- bind_rows(trpv1_hf1, trpv1_hf2) %>% group_by(hgvs, pos, chunk, chunk_pos, mutation_type, name, codon, variants, length) %>% summarize(count = sum(count))
+
+trpv1_1_9_file = '../data/counts/TRPV1_MiSeq_QC/TRPV1_1-9.csv'
+trpv1_1_9 <- read_csv(trpv1_1_9_file, skip = 1, col_names = variantCounts_colnames, col_types=variantCounts_cotypes)
+trpv1_9_17_file = '../data/counts/TRPV1_MiSeq_QC/TRPV1_9-17.csv'
+trpv1_9_17 <- read_csv(trpv1_9_17_file, skip = 1, col_names = variantCounts_colnames, col_types=variantCounts_cotypes)
+
+TRPV1_overlap9_variants <- bind_rows(trpv1_1_9, trpv1_9_17) %>% group_by(hgvs, pos, chunk, chunk_pos, mutation_type, name, codon, variants, length) %>% summarize(count = sum(count))
+
+trpv1_N1_file = '../data/counts/TRPV1_MiSeq_QC/TRPV1_N1.csv'
+trpv1_N1 <- read_csv(trpv1_N1_file, skip = 1, col_names = variantCounts_colnames, col_types=variantCounts_cotypes)
+trpv1_N2_file = '../data/counts/TRPV1_MiSeq_QC/TRPV1_N2.csv'
+trpv1_N2 <- read_csv(trpv1_N2_file, skip = 1, col_names = variantCounts_colnames, col_types=variantCounts_cotypes)
+
+TRPV1_N_variants <- bind_rows(trpv1_N1, trpv1_N2) %>% group_by(hgvs, pos, chunk, chunk_pos, mutation_type, name, codon, variants, length) %>% summarize(count = sum(count))
+
+MOR_file = '../data/counts/MOR/library.csv'
+MOR <- read_csv(MOR_file, skip = 1, col_names = variantCounts_colnames, col_types=variantCounts_cotypes)
+
+
+```
+
+```{r}
+
+  # Plot 1: coverage
+  plot <- TRPV1_N_variants %>% filter(mutation_type != "S") %>% 
+    ggplot(aes(x=pos, y=count, color=length)) + 
+      geom_point() +
+      facet_grid(rows = vars(mutation_type), scales = "free") +
+      labs(x = "Position") + 
+      theme_classic()
+  
+  print(plot)
+  
+  # Plot 1: coverage
+  plot <- trpv1_N1 %>% filter(mutation_type != "S") %>% 
+    ggplot(aes(x=pos, y=count, color=length)) + 
+      geom_point() +
+      facet_grid(rows = vars(mutation_type), scales = "free") +
+      labs(x = "Position") + 
+      theme_classic()
+  
+  print(plot)
+
+  # Plot 1: coverage
+  plot <- trpv1_N2 %>% filter(mutation_type != "S") %>% 
+    ggplot(aes(x=pos, y=count, color=length)) + 
+      geom_point() +
+      facet_grid(rows = vars(mutation_type), scales = "free") +
+      labs(x = "Position") + 
+      theme_classic()
+  
+  print(plot)
+    
+    plot <- TRPV1_overlap9_variants %>% filter(mutation_type != "S") %>% 
+    ggplot(aes(x=pos, y=count, color=length)) + 
+      geom_point() +
+      facet_grid(rows = vars(mutation_type), scales = "free") +
+      labs(x = "Position") + 
+      theme_classic()
+  
+  print(plot)
+
+    plot <- trpv1_1_9 %>% filter(mutation_type != "S") %>% 
+    ggplot(aes(x=pos, y=count, color=length)) + 
+      geom_point() +
+      facet_grid(rows = vars(mutation_type), scales = "free") +
+      labs(x = "Position") + 
+      theme_classic()
+  
+  print(plot)
+
+    plot <- trpv1_9_17 %>% filter(mutation_type != "S") %>% 
+    ggplot(aes(x=pos, y=count, color=length)) + 
+      geom_point() +
+      facet_grid(rows = vars(mutation_type), scales = "free") +
+      labs(x = "Position") + 
+      theme_classic()
+  
+  print(plot)
+
+  # Plot 3: barchart per position
+  plot <- TRPV1_N_variants %>% filter(mutation_type != "S") %>% 
+      ggplot(aes(x=pos, y=count, fill=mutation_type)) +
+      geom_bar(stat="identity") +
+    theme_classic()
+  
+for (chunk in TRPV1_chunks) {
+  plot <- plot + geom_vline(aes_(xintercept=chunk[1]),linetype="dashed",colour="black",size=0.5) 
+  plot <- plot + geom_vline(aes_(xintercept=chunk[2]),linetype="dashed",colour="black",size=0.5)
+}
+
+  print(plot)
+
+  # Plot 3: barchart per position
+  plot <- TRPV1_overlap9_variants %>% filter(mutation_type != "S") %>% 
+      ggplot(aes(x=pos, y=count, fill=mutation_type)) +
+      geom_bar(stat="identity") +
+    theme_classic()
+  
+  for (chunk in TRPV1_chunks) {
+  plot <- plot + geom_vline(aes_(xintercept=chunk[1]),linetype="dashed",colour="black",size=0.5) 
+  plot <- plot + geom_vline(aes_(xintercept=chunk[2]),linetype="dashed",colour="black",size=0.5)
+}
+
+  print(plot)
+  
+    plot <- trpv1_1_9 %>% filter(mutation_type != "S") %>% 
+      ggplot(aes(x=pos, y=count, fill=mutation_type)) +
+      geom_bar(stat="identity") +
+    theme_classic()
+
+  print(plot)
+
+    plot <- trpv1_9_17 %>% filter(mutation_type != "S") %>% 
+      ggplot(aes(x=pos, y=count, fill=mutation_type)) +
+      geom_bar(stat="identity") +
+    theme_classic()
+
+  print(plot)
+
+
+```
+
+Plot MOR library
+
+```{r}
+
+  plot <- MOR %>% filter(mutation_type != "S") %>% 
+    ggplot(aes(x=pos, y=count, color=length)) + 
+      geom_point() +
+      facet_grid(rows = vars(mutation_type), scales = "free") +
+      labs(x = "Position") + 
+      theme_classic()
+  
+  print(plot)
+
+    plot <- MOR %>% filter(mutation_type != "S") %>% 
+      ggplot(aes(x=pos, y=count, fill=mutation_type)) +
+      geom_bar(stat="identity") +
+    theme_classic()
+    
+  print(plot)
+
+
+```
+
+Test for tagmentation bias at amplicon ends
+```{r}
+
+    plot <- trpv1_1_9 %>% filter(mutation_type != "S" & pos < 506) %>% 
+    mutate(pos = 506 - pos) %>%
+      ggplot(aes(x=pos, y=count, fill=mutation_type)) +
+      scale_x_continuous(limits = c(0, 100)) + 
+      geom_bar(stat="identity") +
+    theme_classic()
+
+  print(plot)
+
+    plot <- trpv1_9_17 %>% filter(mutation_type != "S" & pos > 339) %>% 
+      mutate(pos = pos - 339) %>%
+      ggplot(aes(x=pos, y=count, fill=mutation_type)) +
+      scale_x_continuous(limits = c(0, 100)) + 
+      geom_bar(stat="identity") +
+    theme_classic()
+
+  print(plot)
+
+```

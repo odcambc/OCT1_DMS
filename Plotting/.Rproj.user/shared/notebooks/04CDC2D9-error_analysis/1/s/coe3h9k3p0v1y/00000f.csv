@@ -1,0 +1,6 @@
+"0","print(dim(TRPV1_N_variants %>% filter(count > 0))[1]/dim(TRPV1_N_variants)[1])
+"
+"1","[1]"
+"1"," 0.9715455"
+"1","
+"

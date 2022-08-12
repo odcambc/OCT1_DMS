@@ -1,0 +1,20 @@
+"0","ggplot(variant_df, aes(x = GFP_score, y = mutation_type)) +"
+"0","  geom_density_ridges(scale=1) +"
+"0","  geom_point(aes(color=pos), "
+"0","    position = position_jitter(height=0.05, width = 0), size=0.25) + "
+"0","  scale_y_discrete(expand = c(0, 0)) +     # will generally have to set the `expand` option"
+"0","  scale_x_continuous(expand = c(0, 0)) +   # for both axes to remove unneeded padding"
+"0","  coord_cartesian(clip = ""off"") + # to avoid clipping of the very top of the top ridgeline"
+"0","  scale_color_gradient(high = ""#49006a"", low = ""#fff7f3"", aesthetics = ""color"") +"
+"0","  xlab(""Enrich2 score (Abundance)"") +"
+"0","  ylab(""Mutation type"") +"
+"0","  labs(colour = ""Residue position"") +"
+"0","  theme_ridges()"
+"2","Picking joint bandwidth of 0.198
+"
+"2","Warning:"
+"2"," Removed 1807 rows containing non-finite values (stat_density_ridges).
+"
+"2","Warning:"
+"2"," Removed 1807 rows containing missing values (geom_point).
+"

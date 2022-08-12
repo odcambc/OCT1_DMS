@@ -1,0 +1,20 @@
+"0","ggsave(""~/Desktop/dms_analysis/Plotting/Plots/Figures/SI_6_DEF.pdf"", height = 7, width = 15, SI_fig_6_DEF)
+"
+"2","Warning:"
+"2"," Removed 16647 rows containing non-finite values (stat_boxplot).
+"
+"2","Warning:"
+"2"," Removed 16647 rows containing non-finite values (stat_compare_means).
+"
+"2","Warning:"
+"2"," Removed 116 rows containing non-finite values (stat_boxplot).
+"
+"2","Warning:"
+"2"," Removed 116 rows containing non-finite values (stat_compare_means).
+"
+"2","Warning:"
+"2"," Removed 6 rows containing non-finite values (stat_boxplot).
+"
+"2","Warning:"
+"2"," Removed 6 rows containing non-finite values (stat_compare_means).
+"
