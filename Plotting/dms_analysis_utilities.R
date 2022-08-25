@@ -10,45 +10,6 @@
 cbp1 <- c("#D55E00", "#56B4E9", "#009E73", "#CC79A7",
           "#E69F00", "#F0E442", "#0072B2", "#999999")
 
-# Levels for displaying mutations
-
-order <- c("A", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L",
-           "M", "N", "P", "Q", "R", "S", "T", "V", "W", "Y",
-           "D_1", "D_2", "D_3",
-           "I_1", "I_2", "I_3")
-
-variant_names <- c("A", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L",
-                   "M", "N", "P", "Q", "R", "S", "T", "V", "W", "Y",
-                   "Del x1", "Del x2", "Del x3",
-                   "Ins x1 (G)", "Ins x2 (GS)", "Ins x3 (GSG)") 
-
-# Kir2.1 construct (with FLAG tag) sequence
-
-kir21_wt_fasta = "Kir21.fasta"
-
-kir21_wt_fasta_con=file(kir21_wt_fasta, open="r")
-kir21_wt_sequence = readLines(kir21_wt_fasta_con)[2]
-close(kir21_wt_fasta_con)
-
-# Baseline libraries and raw sequencing counts
-
-# In codons
-vatd_chunk_starts = c(1, 42, 85, 127, 169)
-vatd_chunk_ends = c(41, 84, 126, 168, 209)
-vatd_chunks = mapply(c, vatd_chunk_starts, vatd_chunk_ends, SIMPLIFY=FALSE)
-
-kir21_chunk_starts = c(1, 49, 99, 148, 197, 246, 293, 341, 389)
-kir21_chunk_ends = c(48, 98, 147, 196, 245, 292, 340, 388, 436)
-kir21_chunks = mapply(c, kir21_chunk_starts, kir21_chunk_ends, SIMPLIFY=FALSE)
-
-trpv1_chunk_starts = c(1, 50, 101, 151, 201, 251, 300, 349, 398, 447, 496, 545, 594, 643, 692, 741, 791)
-trpv1_chunk_ends = c(49, 100, 150, 200, 250, 299, 348, 397, 446, 495, 544, 593, 642, 691, 740, 790, 838)
-TRPV1_chunks = mapply(c, trpv1_chunk_starts, trpv1_chunk_ends, SIMPLIFY=FALSE)
-
-mor_chunks_starts = c(1, 50, 101, 151, 201, 251, 301, 351)
-mor_chunks_ends = c(49, 100, 150, 200, 250, 300, 350, 400)
-mor_chunks = mapply(c, mor_chunks_starts, mor_chunks_ends, SIMPLIFY=FALSE)
-
 plot_counts_df <- function(variant_df, experiment) {
   
   # Plot 1: coverage

@@ -13,10 +13,13 @@ library(hrbrthemes)
 library(tidyverse)
 library(ggthemes)
 library(ggridges)
-library(ggmsa)
+library(ggpubr)
 library(bio3d)
-#library(ggbraid)
+library(colorspace)
+library(reshape2)
+library(bio3d.ggplot)
 source("dms_analysis_utilities.R")
+
 ```
 
 Import the data for plotting
@@ -73,8 +76,7 @@ oct1_scores <- oct1_scores_shared
 ```
 
 ```{r}
-
-ggplot(oct1_scores %>% filter(mutation_type != "X")) +
+plot <- ggplot(oct1_scores %>% filter(mutation_type != "X")) +
   geom_density(aes(x = SM73_0_score), size=2) +
   xlab("Enrich2 score (0 µM [SM73])") + 
   ylab("Density") + 
@@ -88,7 +90,10 @@ ggplot(oct1_scores %>% filter(mutation_type != "X")) +
   ) +
   facet_grid(rows = vars(mutation_type))
 
-ggplot(oct1_scores %>% filter(mutation_type != "X")) +
+ggsave("Plots/DFE_kernel_SM73_0_OCT1.png", plot = plot, height = 11, width = 8.5)
+ggsave("Plots/DFE_kernel_SM73_0_OCT1.pdf", plot = plot, height = 11, width = 8.5)
+
+plot <- ggplot(oct1_scores %>% filter(mutation_type != "X")) +
   geom_density(aes(x = SM73_1_score), size=2) +
   xlab("Enrich2 score (1 µM [SM73])") + 
   ylab("Density") + 
@@ -102,7 +107,10 @@ ggplot(oct1_scores %>% filter(mutation_type != "X")) +
   ) +
   facet_grid(rows = vars(mutation_type))
 
-ggplot(oct1_scores %>% filter(mutation_type != "X")) +
+ggsave("Plots/DFE_kernel_SM73_1_OCT1.png", plot = plot, height = 11, width = 8.5)
+ggsave("Plots/DFE_kernel_SM73_1_OCT1.pdf", plot = plot, height = 11, width = 8.5)
+
+plot <- ggplot(oct1_scores %>% filter(mutation_type != "X")) +
   geom_density(aes(x = GFP_score), size=2) +
   xlab("Enrich2 score (GFP)") + 
   ylab("Density") + 
@@ -116,64 +124,15 @@ ggplot(oct1_scores %>% filter(mutation_type != "X")) +
   ) +
   facet_grid(rows = vars(mutation_type))
 
-```
+ggsave("Plots/DFE_kernel_GFP_OCT1.png", plot = plot, height = 11, width = 8.5)
+ggsave("Plots/DFE_kernel_GFP_OCT1.pdf", plot = plot, height = 11, width = 8.5)
 
-```{r}
-physical_order <- c("G", "A", "I", "L", "V",
-                    "C", "M",
-                    "S", "T", 
-                    "K", "R", "H",
-                    "D", "E", "N", "Q",
-                    "F", "W", "Y",
-                    "P",
-                    "D_1"
-                    )
-
-ggplot(data=oct1_scores, aes(pos, y=factor(variants, level = physical_order), fill=SM73_0_score)) + 
-  geom_tile(color = "white",
-            lwd = 1.5,
-            linetype = 0.1) +
-  scale_fill_gradient2(midpoint = 0, high = "blue", mid = "white", low = "red") + 
-  coord_fixed() + 
-  xlab("Position") + ylab("Variant") + ggtitle("OCT1 Enrich scores (0 µM [SM73])") + 
-  theme_classic(base_family="Helvetica") + 
-  theme(text = element_text(size=25),
-        axis.text.y = element_text(size=5)
-          )
-ggsave("Plots/OCT1_heatmap_0SM73.pdf", height = 9 , width = 35)
-
-
-ggplot(data=oct1_scores, aes(pos, y=factor(variants, level = physical_order), fill=SM73_1_score)) + 
-  geom_tile(color = "white",
-            lwd = 1.5,
-            linetype = 0.1) +
-  scale_fill_gradient2(midpoint = 0, high = "blue", mid = "white", low = "red") + 
-  coord_fixed() + 
-  xlab("Position") + ylab("Variant") + ggtitle("OCT1 Enrich scores (1 µM [SM73])") + 
-  theme_classic(base_family="Helvetica") + 
-  theme(text = element_text(size=25),
-        axis.text.y = element_text(size=5)
-          )
-ggsave("Plots/OCT1_heatmap_1SM73.pdf", height = 9 , width = 35)
-
-
-ggplot(data=oct1_scores, aes(pos, y=factor(variants, level = physical_order), fill=GFP_score)) + 
-  geom_tile(color = "white",
-            lwd = 1.5,
-            linetype = 0.1) +
-  scale_fill_gradient2(midpoint = 0, low = "blue", mid = "white", high = "red") + 
-  coord_fixed() + 
-  xlab("Position") + ylab("Variant") + ggtitle("OCT1 Enrich scores (Abundance)") + 
-  theme_classic(base_family="Helvetica") + 
-  theme(text = element_text(size=25),
-        axis.text.y = element_text(size=5)
-          )
-ggsave("Plots/OCT1_heatmap_GFP.pdf", height = 9 , width = 35)
 
 ```
 
-```{r}
 
+
+```{r}
 variant_df = oct1_scores %>% filter(mutation_type != "X")
 
 physical_order <- c("G", "A", "I", "L", "V",
@@ -219,7 +178,7 @@ ggplot(variant_df) +
   theme_classic(base_family = "Helvetica") + 
   facet_grid(rows = vars(mutation_type))
 
-ggplot(variant_df, aes(x = GFP_score, y = mutation_type)) +
+plot <- ggplot(variant_df, aes(x = GFP_score, y = mutation_type)) +
   geom_density_ridges(scale=1) +
   geom_point(aes(color=pos), 
     position = position_jitter(height=0.05, width = 0), size=0.25) + 
@@ -231,6 +190,9 @@ ggplot(variant_df, aes(x = GFP_score, y = mutation_type)) +
   ylab("Mutation type") +
   labs(colour = "Residue position") +
   theme_ridges()
+
+ggsave("Plots/DFE_kernel_2_GFP_OCT1.png", plot = plot, height = 11, width = 8.5)
+ggsave("Plots/DFE_kernel_2_GFP_OCT1.pdf", plot = plot, height = 11, width = 8.5)
 
 ```
 
@@ -280,7 +242,7 @@ ggplot(variant_df) +
   theme_classic(base_family = "Helvetica") + 
   facet_grid(rows = vars(mutation_type))
 
-ggplot(variant_df, aes(x = SM73_0_score, y = mutation_type)) +
+plot <- ggplot(variant_df, aes(x = SM73_0_score, y = mutation_type)) +
   geom_density_ridges(scale=1) +
   geom_point(aes(color=pos), 
     position = position_jitter(height=0.05, width = 0), size=0.25) + 
@@ -292,6 +254,9 @@ ggplot(variant_df, aes(x = SM73_0_score, y = mutation_type)) +
   ylab("Mutation type") +
   labs(colour = "Residue position") +
   theme_ridges()
+
+ggsave("Plots/DFE_kernel_2_SM73_0_OCT1.png", plot = plot, height = 11, width = 8.5)
+ggsave("Plots/DFE_kernel_2_SM73_0_OCT1.pdf", plot = plot, height = 11, width = 8.5)
 
 ```
 
@@ -341,7 +306,7 @@ ggplot(variant_df) +
   theme_classic(base_family = "Helvetica") + 
   facet_grid(rows = vars(mutation_type))
 
-ggplot(variant_df, aes(x = SM73_1_score, y = mutation_type)) +
+plot <- ggplot(variant_df, aes(x = SM73_1_score, y = mutation_type)) +
   geom_density_ridges(scale=1) +
   geom_point(aes(color=pos), 
     position = position_jitter(height=0.05, width = 0), size=0.25) + 
@@ -353,13 +318,20 @@ ggplot(variant_df, aes(x = SM73_1_score, y = mutation_type)) +
   ylab("Mutation type") +
   labs(colour = "Residue position") +
   theme_ridges()
+
+ggsave("Plots/DFE_kernel_2_SM73_1_OCT1.png", plot = plot, height = 11, width = 8.5)
+ggsave("Plots/DFE_kernel_2_SM73_1_OCT1.pdf", plot = plot, height = 11, width = 8.5)
+
 ```
-OCT1 heatmap
+
+OCT1 heatmap - 0 µM SM73
 ```{r}
 
-order <- c('D_1','H', 'K', 'R', 'D', 'E',
-          'C','M','N','Q','S','T','A','I','L','V','W','F',
-          'Y','G','P')
+order <- c('D_1', 'H', 'K', 'R', 'D', 'E',
+          'C', 'M', 'N', 'Q', 'S', 'T', 'A', 'I', 'L', 'V', 'W', 'F',
+          'Y', 'G', 'P')
+
+heatmap_limits = c(-1,1)
 
 oct1_wt = "MPTVDDILEQVGESGWFQKQAFLILCLLSAAFAPICVGIVFLGFTPDHHCQSPGVAELSQRCGWSPAEELNYTVPGLGPAGEAFLGQCRRYEVDWNQSALSCVDPLASLATNRSHLPLGPCQDGWVYDTPGSSIVTEFNLVCADSWKLDLFQSCLNAGFLFGSLGVGYFADRFGRKLCLLGTVLVNAVSGVLMAFSPNYMSMLLFRLLQGLVSKGNWMAGYTLITEFVGSGSRRTVAIMYQMAFTVGLVALTGLAYALPHWRWLQLAVSLPTFLFLLYYWCVPESPRWLLSQKRNTEAIKIMDHIAQKNGKLPPADLKMLSLEEDVTEKLSPSFADLFRTPRLRKRTFILMYLWFTDSVLYQGLILHMGATSGNLYLDFLYSALVEIPGAFIALITIDRVGRIYPMAMSNLLAGAACLVMIFISPDLHWLNIIIMCVGRMGITIAIQMICLVNAELYPTFVRNLGVMVCSSLCDIGGIITPFIVFRLREVWQALPLILFAVLGLLAAGVTLLLPETKGVALPETMKDAENLGRKAKPKENTIYLKVQTSEPSGT"
 
@@ -371,10 +343,10 @@ oct_wt_5 = str_split(substr(oct1_wt, 401, 500), '')[[1]]
 oct_wt_6 = str_split(substr(oct1_wt, 501, 550), '')[[1]]
 
 #surface plot
-SM73_1_1 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(1:100),], 
-                      aes(x = pos, y = factor(variants, level = order), fill = SM73_1_score)) +
+SM73_0_1 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(1:100),], 
+                      aes(x = pos, y = factor(variants, level = order), fill = SM73_0_score)) +
   geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
-  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=TRUE, na.value = 'lightyellow',limits=c(-3,3)) + 
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=TRUE, na.value = 'lightyellow',limits=heatmap_limits) + 
   scale_color_manual(values = c(NA,'green')) +
   scale_x_continuous(breaks = seq(0, 550, by = 5),
                      expand = c(0,0),
@@ -393,16 +365,19 @@ SM73_1_1 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(1:100),],
     panel.grid.major = element_line(size = 0.5, linetype = 'solid',
                                     colour = "lightgray"), 
     panel.grid.minor = element_blank(),
-    axis.text.x = element_text(angle = 90, hjust = 1),
-    axis.text = element_text(size = 5),
-    axis.text.x.top = element_text(angle = 0, hjust = 0.5)
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
   ) +
   labs(y = "Mutation", x = "Position")
 
-SM73_1_2 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(101:200),], 
-                      aes(x = pos, y = factor(variants, level = order), fill = SM73_1_score)) +
+SM73_0_2 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(101:200),], 
+                      aes(x = pos, y = factor(variants, level = order), fill = SM73_0_score)) +
   geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
-  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=TRUE, na.value = 'lightyellow',limits=c(-5,5)) + 
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=TRUE, na.value = 'lightyellow',limits=heatmap_limits) + 
   scale_color_manual(values = c(NA,'green')) +
   scale_x_continuous(breaks = seq(0, 550, by = 5),
                      expand = c(0,0),
@@ -421,16 +396,19 @@ SM73_1_2 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(101:200),],
     panel.grid.major = element_line(size = 0.5, linetype = 'solid',
                                     colour = "lightgray"), 
     panel.grid.minor = element_blank(),
-    axis.text.x = element_text(angle = 90, hjust = 1),
-    axis.text = element_text(size = 5),
-    axis.text.x.top = element_text(angle = 0, hjust = 0.5)
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
   ) +
   labs(y = "Mutation", x = "Position")
 
-SM73_1_3 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(201:300),], 
-                      aes(x = pos, y = factor(variants, level = order), fill = SM73_1_score)) +
+SM73_0_3 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(201:300),], 
+                      aes(x = pos, y = factor(variants, level = order), fill = SM73_0_score)) +
   geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
-  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=TRUE, na.value = 'lightyellow',limits=c(-3,3)) + 
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=TRUE, na.value = 'lightyellow',limits=heatmap_limits) + 
   scale_color_manual(values = c(NA,'green')) +
   scale_x_continuous(breaks = seq(0, 550, by = 5),
                      expand = c(0,0),
@@ -449,16 +427,19 @@ SM73_1_3 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(201:300),],
     panel.grid.major = element_line(size = 0.5, linetype = 'solid',
                                     colour = "lightgray"), 
     panel.grid.minor = element_blank(),
-    axis.text.x = element_text(angle = 90, hjust = 1),
-    axis.text = element_text(size = 5),
-    axis.text.x.top = element_text(angle = 0, hjust = 0.5)
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
   ) +
   labs(y = "Mutation", x = "Position")
 
-SM73_1_4 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(301:400),], 
-                      aes(x = pos, y = factor(variants, level = order), fill = SM73_1_score)) +
+SM73_0_4 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(301:400),], 
+                      aes(x = pos, y = factor(variants, level = order), fill = SM73_0_score)) +
   geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
-  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=TRUE, na.value = 'lightyellow',limits=c(-3,3)) + 
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=TRUE, na.value = 'lightyellow',limits=heatmap_limits) + 
   scale_color_manual(values = c(NA,'green')) +
   scale_x_continuous(breaks = seq(0, 550, by = 5),
                      expand = c(0,0),
@@ -477,17 +458,20 @@ SM73_1_4 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(301:400),],
     panel.grid.major = element_line(size = 0.5, linetype = 'solid',
                                     colour = "lightgray"), 
     panel.grid.minor = element_blank(),
-    axis.text.x = element_text(angle = 90, hjust = 1),
-    axis.text = element_text(size = 5),
-    axis.text.x.top = element_text(angle = 0, hjust = 0.5)
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
   ) +
   labs(y = "Mutation", x = "Position")
 
 
-SM73_1_5 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(401:500),], 
-                      aes(x = pos, y = factor(variants, level = order), fill = SM73_1_score)) +
+SM73_0_5 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(401:500),], 
+                      aes(x = pos, y = factor(variants, level = order), fill = SM73_0_score)) +
   geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
-  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=TRUE, na.value = 'lightyellow',limits=c(-3,3)) + 
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=TRUE, na.value = 'lightyellow',limits=heatmap_limits) + 
   scale_color_manual(values = c(NA,'green')) +
   scale_x_continuous(breaks = seq(0, 550, by = 5),
                      expand = c(0,0),
@@ -506,16 +490,19 @@ SM73_1_5 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(401:500),],
     panel.grid.major = element_line(size = 0.5, linetype = 'solid',
                                     colour = "lightgray"), 
     panel.grid.minor = element_blank(),
-    axis.text.x = element_text(angle = 90, hjust = 1),
-    axis.text = element_text(size = 5),
-    axis.text.x.top = element_text(angle = 0, hjust = 0.5)
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
   ) +
   labs(y = "Mutation", x = "Position")
 
-SM73_1_6 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(501:550),], 
-                      aes(x = pos, y = factor(variants, level = order), fill = SM73_1_score)) +
+SM73_0_6 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(501:550),], 
+                      aes(x = pos, y = factor(variants, level = order), fill = SM73_0_score)) +
   geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
-  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=TRUE, na.value = 'lightyellow',limits=c(-3,3)) + 
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=TRUE, na.value = 'lightyellow',limits=heatmap_limits) + 
   scale_color_manual(values = c(NA,'green')) +
   scale_x_continuous(breaks = seq(0, 550, by = 5),
                      expand = c(0,0),
@@ -534,28 +521,453 @@ SM73_1_6 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(501:550),],
     panel.grid.major = element_line(size = 0.5, linetype = 'solid',
                                     colour = "lightgray"), 
     panel.grid.minor = element_blank(),
-    axis.text.x = element_text(angle = 90, hjust = 1),
-    axis.text = element_text(size = 5),
-    axis.text.x.top = element_text(angle = 0, hjust = 0.5)
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="right"
+  ) +
+  labs(y = "Mutation", x = "Position")
+
+SM73_0_DMS = ggarrange(SM73_0_1, SM73_0_2, SM73_0_3, SM73_0_4, SM73_0_5, SM73_0_6,
+                        nrow = 6, ncol = 1)
+
+ggsave("Plots/Heatmap_SM73_0_OCT1.pdf", plot = SM73_0_DMS, height = 11, width = 8.5)
+ggsave("Plots/Heatmap_SM73_0_OCT1.png", plot = SM73_0_DMS, height = 11, width = 8.5)
+```
+
+OCT1 heatmap - 1 µM SM73
+```{r}
+
+order <- c('D_1', 'H', 'K', 'R', 'D', 'E',
+          'C', 'M', 'N', 'Q', 'S', 'T', 'A', 'I', 'L', 'V', 'W', 'F',
+          'Y', 'G', 'P')
+
+heatmap_limits = c(-3,3)
+
+oct1_wt = "MPTVDDILEQVGESGWFQKQAFLILCLLSAAFAPICVGIVFLGFTPDHHCQSPGVAELSQRCGWSPAEELNYTVPGLGPAGEAFLGQCRRYEVDWNQSALSCVDPLASLATNRSHLPLGPCQDGWVYDTPGSSIVTEFNLVCADSWKLDLFQSCLNAGFLFGSLGVGYFADRFGRKLCLLGTVLVNAVSGVLMAFSPNYMSMLLFRLLQGLVSKGNWMAGYTLITEFVGSGSRRTVAIMYQMAFTVGLVALTGLAYALPHWRWLQLAVSLPTFLFLLYYWCVPESPRWLLSQKRNTEAIKIMDHIAQKNGKLPPADLKMLSLEEDVTEKLSPSFADLFRTPRLRKRTFILMYLWFTDSVLYQGLILHMGATSGNLYLDFLYSALVEIPGAFIALITIDRVGRIYPMAMSNLLAGAACLVMIFISPDLHWLNIIIMCVGRMGITIAIQMICLVNAELYPTFVRNLGVMVCSSLCDIGGIITPFIVFRLREVWQALPLILFAVLGLLAAGVTLLLPETKGVALPETMKDAENLGRKAKPKENTIYLKVQTSEPSGT"
+
+oct_wt_1 = str_split(substr(oct1_wt, 1, 100), '')[[1]]
+oct_wt_2 = str_split(substr(oct1_wt, 101, 200), '')[[1]]
+oct_wt_3 = str_split(substr(oct1_wt, 201, 300), '')[[1]]
+oct_wt_4 = str_split(substr(oct1_wt, 301, 400), '')[[1]]
+oct_wt_5 = str_split(substr(oct1_wt, 401, 500), '')[[1]]
+oct_wt_6 = str_split(substr(oct1_wt, 501, 550), '')[[1]]
+
+#surface plot
+SM73_1_1 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(1:100),], 
+                      aes(x = pos, y = factor(variants, level = order), fill = SM73_1_score)) +
+  geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=TRUE, na.value = 'lightyellow',limits=heatmap_limits) + 
+  scale_color_manual(values = c(NA,'green')) +
+  scale_x_continuous(breaks = seq(0, 550, by = 5),
+                     expand = c(0,0),
+                     sec.axis = sec_axis(
+                      trans = ~.,
+                      name = "Sequence",
+                      breaks = seq(1, 100),
+                      labels = oct_wt_1,
+                      guide = derive()
+                    )) +
+  coord_fixed(ratio = 1) +
+  theme(
+    panel.background = element_rect(fill = "white",
+                                    colour = "white",
+                                    size = 0.5, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                    colour = "lightgray"), 
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
+  ) +
+  labs(y = "Mutation", x = "Position")
+
+SM73_1_2 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(101:200),], 
+                      aes(x = pos, y = factor(variants, level = order), fill = SM73_1_score)) +
+  geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=TRUE, na.value = 'lightyellow',limits=heatmap_limits) + 
+  scale_color_manual(values = c(NA,'green')) +
+  scale_x_continuous(breaks = seq(0, 550, by = 5),
+                     expand = c(0,0),
+                     sec.axis = sec_axis(
+                      trans = ~.,
+                      name = "Sequence",
+                      breaks = seq(101, 200),
+                      labels = oct_wt_2,
+                      guide = derive()
+                    )) +
+  coord_fixed(ratio = 1) +
+  theme(
+    panel.background = element_rect(fill = "white",
+                                    colour = "white",
+                                    size = 0.5, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                    colour = "lightgray"), 
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
+  ) +
+  labs(y = "Mutation", x = "Position")
+
+SM73_1_3 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(201:300),], 
+                      aes(x = pos, y = factor(variants, level = order), fill = SM73_1_score)) +
+  geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=TRUE, na.value = 'lightyellow',limits=heatmap_limits) + 
+  scale_color_manual(values = c(NA,'green')) +
+  scale_x_continuous(breaks = seq(0, 550, by = 5),
+                     expand = c(0,0),
+                     sec.axis = sec_axis(
+                      trans = ~.,
+                      name = "Sequence",
+                      breaks = seq(201, 300),
+                      labels = oct_wt_3,
+                      guide = derive()
+                    )) +
+  coord_fixed(ratio = 1) +
+  theme(
+    panel.background = element_rect(fill = "white",
+                                    colour = "white",
+                                    size = 0.5, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                    colour = "lightgray"), 
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
+  ) +
+  labs(y = "Mutation", x = "Position")
+
+SM73_1_4 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(301:400),], 
+                      aes(x = pos, y = factor(variants, level = order), fill = SM73_1_score)) +
+  geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=TRUE, na.value = 'lightyellow',limits=heatmap_limits) + 
+  scale_color_manual(values = c(NA,'green')) +
+  scale_x_continuous(breaks = seq(0, 550, by = 5),
+                     expand = c(0,0),
+                     sec.axis = sec_axis(
+                      trans = ~.,
+                      name = "Sequence",
+                      breaks = seq(301, 400),
+                      labels = oct_wt_4,
+                      guide = derive()
+                    )) +
+  coord_fixed(ratio = 1) +
+  theme(
+    panel.background = element_rect(fill = "white",
+                                    colour = "white",
+                                    size = 0.5, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                    colour = "lightgray"), 
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
   ) +
   labs(y = "Mutation", x = "Position")
 
 
-SM73_DMS = ggarrange(SM73_1_1, SM73_1_2, SM73_1_3, SM73_1_4, SM73_1_5, SM73_1_6,
+SM73_1_5 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(401:500),], 
+                      aes(x = pos, y = factor(variants, level = order), fill = SM73_1_score)) +
+  geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=TRUE, na.value = 'lightyellow',limits=heatmap_limits) + 
+  scale_color_manual(values = c(NA,'green')) +
+  scale_x_continuous(breaks = seq(0, 550, by = 5),
+                     expand = c(0,0),
+                     sec.axis = sec_axis(
+                      trans = ~.,
+                      name = "Sequence",
+                      breaks = seq(401, 500),
+                      labels = oct_wt_5,
+                      guide = derive()
+                    )) +
+  coord_fixed(ratio = 1) +
+  theme(
+    panel.background = element_rect(fill = "white",
+                                    colour = "white",
+                                    size = 0.5, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                    colour = "lightgray"), 
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
+  ) +
+  labs(y = "Mutation", x = "Position")
+
+SM73_1_6 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(501:550),], 
+                      aes(x = pos, y = factor(variants, level = order), fill = SM73_1_score)) +
+  geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=TRUE, na.value = 'lightyellow',limits=heatmap_limits) + 
+  scale_color_manual(values = c(NA,'green')) +
+  scale_x_continuous(breaks = seq(0, 550, by = 5),
+                     expand = c(0,0),
+                     sec.axis = sec_axis(
+                      trans = ~.,
+                      name = "Sequence",
+                      breaks = seq(501, 550),
+                      labels = oct_wt_6,
+                      guide = derive()
+                    )) +
+  coord_fixed(ratio = 1) +
+  theme(
+    panel.background = element_rect(fill = "white",
+                                    colour = "white",
+                                    size = 0.5, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                    colour = "lightgray"), 
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="right"
+  ) +
+  labs(y = "Mutation", x = "Position")
+
+SM73_1_DMS = ggarrange(SM73_1_1, SM73_1_2, SM73_1_3, SM73_1_4, SM73_1_5, SM73_1_6,
                         nrow = 6, ncol = 1)
-SM73_DMS
-annotate_figure(SM73_DMS, fig.lab = '1 µM [SM73]')
 
-ggsave("Plots/OCT1_SM731_heatmap.pdf", height = 11, width = 8.5)
-ggsave("Plots/OCT1_SM731_heatmap.png", height = 11, width = 8.5)
-
+ggsave("Plots/Heatmap_SM73_1_OCT1.pdf", plot = SM73_1_DMS, height = 11, width = 8.5)
+ggsave("Plots/Heatmap_SM73_1_OCT1.png", plot = SM73_1_DMS, height = 11, width = 8.5)
 ```
 
-Map the OCT1 results to the Alphafold model
+OCT1 heatmap - GFP sorting (abundance)
+```{r}
+
+order <- c('D_1', 'H', 'K', 'R', 'D', 'E',
+          'C', 'M', 'N', 'Q', 'S', 'T', 'A', 'I', 'L', 'V', 'W', 'F',
+          'Y', 'G', 'P')
+
+heatmap_limits = c(-1,1)
+
+oct1_wt = "MPTVDDILEQVGESGWFQKQAFLILCLLSAAFAPICVGIVFLGFTPDHHCQSPGVAELSQRCGWSPAEELNYTVPGLGPAGEAFLGQCRRYEVDWNQSALSCVDPLASLATNRSHLPLGPCQDGWVYDTPGSSIVTEFNLVCADSWKLDLFQSCLNAGFLFGSLGVGYFADRFGRKLCLLGTVLVNAVSGVLMAFSPNYMSMLLFRLLQGLVSKGNWMAGYTLITEFVGSGSRRTVAIMYQMAFTVGLVALTGLAYALPHWRWLQLAVSLPTFLFLLYYWCVPESPRWLLSQKRNTEAIKIMDHIAQKNGKLPPADLKMLSLEEDVTEKLSPSFADLFRTPRLRKRTFILMYLWFTDSVLYQGLILHMGATSGNLYLDFLYSALVEIPGAFIALITIDRVGRIYPMAMSNLLAGAACLVMIFISPDLHWLNIIIMCVGRMGITIAIQMICLVNAELYPTFVRNLGVMVCSSLCDIGGIITPFIVFRLREVWQALPLILFAVLGLLAAGVTLLLPETKGVALPETMKDAENLGRKAKPKENTIYLKVQTSEPSGT"
+
+oct_wt_1 = str_split(substr(oct1_wt, 1, 100), '')[[1]]
+oct_wt_2 = str_split(substr(oct1_wt, 101, 200), '')[[1]]
+oct_wt_3 = str_split(substr(oct1_wt, 201, 300), '')[[1]]
+oct_wt_4 = str_split(substr(oct1_wt, 301, 400), '')[[1]]
+oct_wt_5 = str_split(substr(oct1_wt, 401, 500), '')[[1]]
+oct_wt_6 = str_split(substr(oct1_wt, 501, 550), '')[[1]]
+
+#surface plot
+SM73_GFP_1 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(1:100),], 
+                      aes(x = pos, y = factor(variants, level = order), fill = GFP_score)) +
+  geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=TRUE, na.value = 'lightyellow',limits=heatmap_limits) + 
+  scale_color_manual(values = c(NA,'green')) +
+  scale_x_continuous(breaks = seq(0, 550, by = 5),
+                     expand = c(0,0),
+                     sec.axis = sec_axis(
+                      trans = ~.,
+                      name = "Sequence",
+                      breaks = seq(1, 100),
+                      labels = oct_wt_1,
+                      guide = derive()
+                    )) +
+  coord_fixed(ratio = 1) +
+  theme(
+    panel.background = element_rect(fill = "white",
+                                    colour = "white",
+                                    size = 0.5, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                    colour = "lightgray"), 
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
+  ) +
+  labs(y = "Mutation", x = "Position")
+
+SM73_GFP_2 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(101:200),], 
+                      aes(x = pos, y = factor(variants, level = order), fill = GFP_score)) +
+  geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=TRUE, na.value = 'lightyellow',limits=heatmap_limits) + 
+  scale_color_manual(values = c(NA,'green')) +
+  scale_x_continuous(breaks = seq(0, 550, by = 5),
+                     expand = c(0,0),
+                     sec.axis = sec_axis(
+                      trans = ~.,
+                      name = "Sequence",
+                      breaks = seq(101, 200),
+                      labels = oct_wt_2,
+                      guide = derive()
+                    )) +
+  coord_fixed(ratio = 1) +
+  theme(
+    panel.background = element_rect(fill = "white",
+                                    colour = "white",
+                                    size = 0.5, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                    colour = "lightgray"), 
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
+  ) +
+  labs(y = "Mutation", x = "Position")
+
+SM73_GFP_3 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(201:300),], 
+                      aes(x = pos, y = factor(variants, level = order), fill = GFP_score)) +
+  geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=TRUE, na.value = 'lightyellow',limits=heatmap_limits) + 
+  scale_color_manual(values = c(NA,'green')) +
+  scale_x_continuous(breaks = seq(0, 550, by = 5),
+                     expand = c(0,0),
+                     sec.axis = sec_axis(
+                      trans = ~.,
+                      name = "Sequence",
+                      breaks = seq(201, 300),
+                      labels = oct_wt_3,
+                      guide = derive()
+                    )) +
+  coord_fixed(ratio = 1) +
+  theme(
+    panel.background = element_rect(fill = "white",
+                                    colour = "white",
+                                    size = 0.5, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                    colour = "lightgray"), 
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
+  ) +
+  labs(y = "Mutation", x = "Position")
+
+SM73_GFP_4 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(301:400),], 
+                      aes(x = pos, y = factor(variants, level = order), fill = GFP_score)) +
+  geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=TRUE, na.value = 'lightyellow',limits=heatmap_limits) + 
+  scale_color_manual(values = c(NA,'green')) +
+  scale_x_continuous(breaks = seq(0, 550, by = 5),
+                     expand = c(0,0),
+                     sec.axis = sec_axis(
+                      trans = ~.,
+                      name = "Sequence",
+                      breaks = seq(301, 400),
+                      labels = oct_wt_4,
+                      guide = derive()
+                    )) +
+  coord_fixed(ratio = 1) +
+  theme(
+    panel.background = element_rect(fill = "white",
+                                    colour = "white",
+                                    size = 0.5, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                    colour = "lightgray"), 
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
+  ) +
+  labs(y = "Mutation", x = "Position")
+
+
+SM73_GFP_5 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(401:500),], 
+                      aes(x = pos, y = factor(variants, level = order), fill = GFP_score)) +
+  geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=TRUE, na.value = 'lightyellow',limits=heatmap_limits) + 
+  scale_color_manual(values = c(NA,'green')) +
+  scale_x_continuous(breaks = seq(0, 550, by = 5),
+                     expand = c(0,0),
+                     sec.axis = sec_axis(
+                      trans = ~.,
+                      name = "Sequence",
+                      breaks = seq(401, 500),
+                      labels = oct_wt_5,
+                      guide = derive()
+                    )) +
+  coord_fixed(ratio = 1) +
+  theme(
+    panel.background = element_rect(fill = "white",
+                                    colour = "white",
+                                    size = 0.5, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                    colour = "lightgray"), 
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="none"
+  ) +
+  labs(y = "Mutation", x = "Position")
+
+SM73_GFP_6 = ggplot(data = oct1_scores[oct1_scores$pos %in% c(501:550),], 
+                      aes(x = pos, y = factor(variants, level = order), fill = GFP_score)) +
+  geom_tile(aes(color = as.factor(is.wt)), size = 0.2) +
+  scale_fill_continuous_divergingx(palette = 'RdBu', mid = 0,l1=0.2, l3 = 0.2, p1=0.9, p3 = .4, p4 = 0.9,rev=TRUE, na.value = 'lightyellow',limits=heatmap_limits) + 
+  scale_color_manual(values = c(NA,'green')) +
+  scale_x_continuous(breaks = seq(0, 550, by = 5),
+                     expand = c(0,0),
+                     sec.axis = sec_axis(
+                      trans = ~.,
+                      name = "Sequence",
+                      breaks = seq(501, 550),
+                      labels = oct_wt_6,
+                      guide = derive()
+                    )) +
+  coord_fixed(ratio = 1) +
+  theme(
+    panel.background = element_rect(fill = "white",
+                                    colour = "white",
+                                    size = 0.5, linetype = "solid"),
+    panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                    colour = "lightgray"), 
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_text(angle = 90, hjust = 1, size = 6),
+    axis.text.y = element_text(size = 4),
+    axis.text = element_text(size = 4),
+    axis.text.x.top = element_text(angle = 0, hjust = 0.5, family = "mono"),
+    axis.ticks = element_blank(),
+    legend.position="right"
+  ) +
+  labs(y = "Mutation", x = "Position")
+
+SM73_GFP = ggarrange(SM73_GFP_1, SM73_GFP_2, SM73_GFP_3, SM73_GFP_4, SM73_GFP_5, SM73_GFP_6,
+                        nrow = 6, ncol = 1)
+
+ggsave("Plots/Heatmap_GFP_OCT1.pdf", plot = SM73_GFP, height = 11, width = 8.5)
+ggsave("Plots/Heatmap_GFP_OCT1.png", plot = SM73_GFP, height = 11, width = 8.5)
+```
+
+Map the OCT1 results to the Alphafold model(s)
 ```{r}
 
 # Single-chain model.
-OCT1_AF <- read.pdb("Structures/AF-O15245-F1-model_v2.pdb")
+OCT1_AF <- read.pdb("../../Structures/AF-O15245-F1-model_v2.pdb")
 
 oct1_avg_scores <- oct1_scores %>% group_by(pos) %>% summarise(avg_0_SM73 = mean(SM73_0_score, na.rm=TRUE),
                                             avg_1_SM73 = mean(SM73_1_score, na.rm=TRUE), 
@@ -564,12 +976,93 @@ oct1_avg_scores <- oct1_scores %>% group_by(pos) %>% summarise(avg_0_SM73 = mean
 plot.bio3d(OCT1_AF$atom$b, sse=OCT1_AF, typ="l", ylab="B-factor")
 
 x = map_scores_pdb(OCT1_AF, oct1_avg_scores, "avg_0_SM73")
-write.pdb(x, file="Structures/oct1_AF_avg_0_2.pdb")
+write.pdb(x, file="../../Structures/oct1_AF_avg_0_2.pdb")
 
 x = map_scores_pdb(OCT1_AF, oct1_avg_scores, "avg_1_SM73")
-write.pdb(x, file="Structures/oct1_AF_avg_1_2.pdb")
+write.pdb(x, file="../../Structures/oct1_AF_avg_1_2.pdb")
 
 x = map_scores_pdb(OCT1_AF, oct1_avg_scores, "avg_A")
-write.pdb(x, file="Structures/oct1_AF_avg_A_2.pdb")
+write.pdb(x, file="../../Structures/oct1_AF_avg_A_2.pdb")
+
+```
+
+Compare the inward and open states
+```{r}
+OCT1_in <- read.pdb("../../Structures/OCT1_in.pdb")
+OCT1_out <- read.pdb("../../Structures/OCT1_out.pdb")
+
+## Atom Selection indices
+inds_in <- atom.select(OCT1_in, "calpha")
+inds_out <- atom.select(OCT1_out, "calpha")
+
+## Reference contact map
+ref.cont_in <- cmap( OCT1_in$xyz[inds_in$xyz], dcut=9, scut=3)
+ref.cont_out <- cmap( OCT1_out$xyz[inds_out$xyz], dcut=9, scut=3)
+
+plot.cmap(ref.cont_in, main="Contact map (inward)")
+plot.cmap(ref.cont_out, main="Contact map (outward)")
+
+plot.cmap(ref.cont_in-ref.cont_out, main="Contact change map (in, not out)")
+plot.cmap(ref.cont_out-ref.cont_in, main="Contact change map (out, not in)")
+
+```
+
+
+
+
+
+```{r}
+filled.contour(dm(OCT1_in, inds="calpha"), nlevels = 50)
+
+# Downlaod and align two PDB files
+pdbs <- pdbaln(list(OCT1_in, OCT1_out), web.args=list(email='cbmacdo@umich.edu'))
+
+# Get distance matrix
+a <- dm.xyz(pdbs$xyz[1,])
+b <- dm.xyz(pdbs$xyz[2,])
+
+# Calculate DDM
+c <- a - b
+
+# Plot DDM
+plot(c,key=FALSE, grid=FALSE)
+
+plot(c, axis.tick.space=50,
+     resnum.1=pdbs$resno[1,],
+     resnum.2=pdbs$resno[2,],
+     grid.col="black",
+     xlab="Residue No. (OCT1_in)", ylab="Residue No. (OCT1_out)")
+
+l <- dm.xyz(OCT1_in$xyz, grpby=OCT1_in$atom[,"resno"], scut=3)
+
+plot(l)
+
+```
+
+
+```{r}
+long.cont_in<-melt(ref.cont_in, c("x", "y"), value.name = "z")
+long.cont_out<-melt(ref.cont_out, c("x", "y"), value.name = "z")
+long.cont_diff<-melt(ref.cont_in - ref.cont_out, c("x", "y"), value.name = "z")
+
+#longData<-longData[longData$value!=0,]
+
+ggplot(long.cont_diff, aes(x = x, y = y)) + 
+  geom_tile(aes(fill=z)) + 
+  scale_fill_gradient(low="white", high="red", na.value="white") +
+  theme_classic()
+```
+
+
+```{r}
+pdb_test <- read.pdb( "5p21" ) 
+
+##- Single structure distance matrix
+ k <- dm(pdb_test, inds="calpha", mask.lower=FALSE)
+ gg.mat(k)
+
+ ## Add secondary structure 'annotation layer' to plot
+ p <- gg.mat(k) + gg_sse(pdb_test)  ## save in an object 'p'
+ p  ## produce the plot
 
 ```
