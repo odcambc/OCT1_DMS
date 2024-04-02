@@ -1,0 +1,211 @@
+---
+title: "OCT1 manuscript - SI figure generation"
+output: html_notebook
+---
+
+```{r}
+library(MASS)
+
+library(ggplot2)
+library(dplyr)
+library(bio3d)
+library(tidyverse)
+library(colorspace)
+library(cowplot)
+library(ggpubr)
+library(patchwork)
+library(GGally)
+
+source("dms_analysis_utilities.R")
+```
+
+
+Plot replicates and determine correlations
+
+```{r}
+oct1_scores_shared_file ="../data/Enrich2/Oct1_full/tsv/Oct1_full_exp/main_identifiers_scores_shared.tsv"
+
+oct1_shared_colnames <- c("hgvs", "0SM73_SE_R1", "0SM73_R1",
+                                 "0SM73_SE_R2", "0SM73_R2",
+                                 "0SM73_SE_R3", "0SM73_R3",
+                                 "1SM73_SE_R1", "1SM73_R1",
+                                 "1SM73_SE_R2", "1SM73_R2",
+                                 "1SM73_SE_R3", "1SM73_R3",
+                                 "GFP_SE_R1", "GFP_score_R1",
+                                 "GFP_SE_R2", "GFP_score_R2",
+                                 "GFP_SE_R3", "GFP_score_R3")
+
+oct1_shared_coltypes <- c("character", "numeric", "numeric",
+                                "numeric", "numeric",
+                                "numeric", "numeric",
+                                "numeric", "numeric",
+                                "numeric", "numeric",
+                                "numeric", "numeric",
+                                "numeric", "numeric",
+                                "numeric", "numeric",
+                                "numeric", "numeric")
+
+oct1_scores_shared <- read_delim(oct1_scores_shared_file, col_names = oct1_shared_colnames, skip=5)
+
+
+# Note: ggpairs reports Pearson by default
+
+plot_SI_correlation_0 <- ggpairs(oct1_scores_shared, columns=c('0SM73_R1', '0SM73_R2', '0SM73_R3')) +
+  theme_classic()
+plot_SI_correlation_1 <- ggpairs(oct1_scores_shared, columns=c('1SM73_R1', '1SM73_R2', '1SM73_R3')) +
+  theme_classic()
+plot_SI_correlation_GFP <- ggpairs(oct1_scores_shared, columns=c('GFP_score_R1', 'GFP_score_R2', 'GFP_score_R3')) +
+  theme_classic()
+
+ggsave("output/SI_figures/replicate_correlations_0SM73.pdf", width = 5, height = 5, plot_SI_correlation_0)
+ggsave("output/SI_figures/replicate_correlations_1SM73.pdf", width = 5, height = 5, plot_SI_correlation_1)
+ggsave("output/SI_figures/replicate_correlations_GFP.pdf", width = 5, height = 5, plot_SI_correlation_GFP)
+
+ggsave("output/SI_figures/replicate_correlations_0SM73.png", width = 5, height = 5, plot_SI_correlation_0)
+ggsave("output/SI_figures/replicate_correlations_1SM73.png", width = 5, height = 5, plot_SI_correlation_1)
+ggsave("output/SI_figures/replicate_correlations_GFP.png", width = 5, height = 5, plot_SI_correlation_GFP)
+
+```
+Plot library coverage and variants observed
+```{r}
+oct1_counts_file_A ="../data/Counts/Oct1_full/A.csv"
+oct1_counts_file_B ="../data/Counts/Oct1_full/B.csv"
+oct1_counts_file_C ="../data/Counts/Oct1_full/C.csv"
+oct1_counts_file_D ="../data/Counts/Oct1_full/D.csv"
+
+oct1_counts_A <- read_delim(oct1_counts_file_A, col_select = !1)
+oct1_counts_B <- read_delim(oct1_counts_file_B, col_select = !1)
+oct1_counts_C <- read_delim(oct1_counts_file_C, col_select = !1)
+oct1_counts_D <- read_delim(oct1_counts_file_D, col_select = !1)
+```
+
+```{r}
+plot_unstack_A <- oct1_counts_A %>% filter(mutation_type != "X") %>% group_by(pos) %>% summarize(count = sum(count)) %>%
+  ggplot(aes(x=pos, y=count)) +
+  geom_bar(stat="identity", width=1.0) +
+  scale_y_log10() + 
+  xlab("Position (AA)") + 
+  ylab("Count") +
+  labs(color = "Mutation type") +
+  theme_classic() 
+
+print(plot_unstack_A)
+
+plot_unstack_B <- oct1_counts_B %>% filter(mutation_type != "X") %>% group_by(pos) %>% summarize(count = sum(count)) %>%
+  ggplot(aes(x=pos, y=count)) +
+  geom_bar(stat="identity", width=1.0) +
+  scale_y_log10() + 
+  xlab("Position (AA)") + 
+  ylab("Count") +
+  labs(color = "Mutation type") +
+  theme_classic() 
+
+print(plot_unstack_B)
+
+plot_unstack_C <- oct1_counts_C %>% filter(mutation_type != "X") %>% group_by(pos) %>% summarize(count = sum(count)) %>%
+  ggplot(aes(x=pos, y=count)) +
+  geom_bar(stat="identity", width=1.0) +
+  scale_y_log10() + 
+  xlab("Position (AA)") + 
+  ylab("Count") +
+  labs(color = "Mutation type") +
+  theme_classic() 
+
+print(plot_unstack_C)
+
+plot_unstack_D <- oct1_counts_D %>% filter(mutation_type != "X") %>% group_by(pos) %>% summarize(count = sum(count)) %>%
+  ggplot(aes(x=pos, y=count)) +
+  geom_bar(stat="identity", width=1.0) +
+  scale_y_log10() + 
+  xlab("Position (AA)") + 
+  ylab("Count") +
+  labs(color = "Mutation type") +
+  theme_classic() 
+
+print(plot_unstack_D)
+
+#ggsave("Figures/Panels/1B.pdf", height = 5, width = 10, plot_unstack)
+#ggsave("Figures/Panels/1B.png", height = 5, width = 10, plot_unstack)
+
+ggsave("output/SI_figures/baseline_A.pdf", width = 5, height = 3, plot_unstack_A)
+ggsave("output/SI_figures/baseline_B.pdf", width = 5, height = 3, plot_unstack_B)
+ggsave("output/SI_figures/baseline_C.pdf", width = 5, height = 3, plot_unstack_C)
+ggsave("output/SI_figures/baseline_D.pdf", width = 5, height = 3, plot_unstack_D)
+
+ggsave("output/SI_figures/baseline_A.png", width = 5, height = 3, plot_unstack_A)
+ggsave("output/SI_figures/baseline_B.png", width = 5, height = 3, plot_unstack_B)
+ggsave("output/SI_figures/baseline_C.png", width = 5, height = 3, plot_unstack_C)
+ggsave("output/SI_figures/baseline_D.png", width = 5, height = 3, plot_unstack_D)
+
+dim(oct1_counts_A %>% filter(count != 0))[1] / dim(oct1_counts_A)[1]
+dim(oct1_counts_B %>% filter(count != 0))[1] / dim(oct1_counts_B)[1]
+dim(oct1_counts_C %>% filter(count != 0))[1] / dim(oct1_counts_C)[1]
+dim(oct1_counts_D %>% filter(count != 0))[1] / dim(oct1_counts_D)[1]
+```
+
+```{r}
+
+consurf_scores <- read.csv("../data/consurf_scores.csv")
+
+consurf_oct1_scores <- left_join(oct1_avg_scores, consurf_scores, by = c("pos" = "pos"))
+
+consurf_folding <- ggplot(data = consurf_importance, aes(x=ConSurf.Grade, y=low_GFP)) +
+  geom_point(color = "red", alpha = 0.2) +
+  geom_smooth(data = consurf_importance %>% filter(low_GFP >= folding_score_break), method = "lm") +
+  stat_cor(data = consurf_importance %>% filter(low_GFP >= folding_score_break), method = "spearman", label.x = 1, label.y = 40, color = 'black',
+           cor.coef.name = "rho") +
+  xlab("Consurf score") + 
+  ylab("Folding importance score") +
+  theme_classic()
+
+consurf_folding
+
+ggsave("output/SI_figures/consurf_folding.png", width = 5, height = 3, consurf_folding)
+ggsave("output/SI_figures/consurf_folding.pdf", width = 5, height = 3, consurf_folding)
+
+
+consurf_function <- ggplot(data = consurf_importance, aes(x=ConSurf.Grade, y=low_function)) +
+  geom_point(color = "blue", alpha = 0.2) +
+  geom_smooth(data = consurf_importance %>% filter(low_function >= function_score_break), method = "lm") +
+  stat_cor(data = consurf_importance %>% filter(low_function >= function_score_break), method = "spearman", label.x = 1, label.y = 10, color = 'black',
+           cor.coef.name = "rho") +
+  xlab("Consurf score") + 
+  ylab("Functional importance score") +
+  theme_classic()
+
+consurf_function
+
+ggsave("output/SI_figures/consurf_function.png", width = 5, height = 3, consurf_function)
+ggsave("output/SI_figures/consurf_function.pdf", width = 5, height = 3, consurf_function)
+
+consurf_gfp <- ggplot(data = consurf_importance, aes(x=ConSurf.Grade, y=avg_A)) +
+  geom_point(color = "red", alpha = 0.2) +
+  geom_smooth(method = "lm") +
+  stat_cor(method = "spearman", label.x = 1, label.y = -2, color = 'black',
+           cor.coef.name = "rho") +
+  xlab("Consurf score") + 
+  ylab("Mean VAMP-seq score") +
+  theme_classic()
+
+consurf_gfp
+
+ggsave("output/SI_figures/consurf_gfp.png", width = 5, height = 3, consurf_gfp)
+ggsave("output/SI_figures/consurf_gfp.pdf", width = 5, height = 3, consurf_gfp)
+
+consurf_sm73 <- ggplot(data = consurf_importance, aes(x=ConSurf.Grade, y=avg_1_SM73)) +
+  geom_point(color = "blue", alpha = 0.2) +
+  geom_smooth(method = "lm") +
+  stat_cor(method = "spearman", label.x = 1, label.y = 0.5, color = 'black',
+           cor.coef.name = "rho") +
+  xlab("Consurf score") + 
+  ylab("Mean cytotoxicity score") +
+  theme_classic()
+
+consurf_sm73
+
+ggsave("output/SI_figures/consurf_sm73.png", width = 5, height = 3, consurf_sm73)
+ggsave("output/SI_figures/consurf_sm73.pdf", width = 5, height = 3, consurf_sm73)
+
+
+```
+

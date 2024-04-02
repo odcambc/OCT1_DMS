@@ -1,0 +1,278 @@
+---
+title: "Post-review analysis"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+```{r}
+#library(MASS)
+
+library(ggplot2)
+library(dplyr)
+library(bio3d)
+library(tidyverse)
+library(colorspace)
+library(cowplot)
+library(ggpubr)
+library(patchwork)
+
+source("dms_analysis_utilities.R")
+
+#source("oct1_dms_read_enrich.R")
+
+```
+
+Read score files
+
+```{r}
+# Enrich2 score files
+oct1_combined_scores_file ="../data/oct1_combined_scores.csv"
+oct1_combined_scores <- read_csv(oct1_combined_scores_file)
+
+oct1_combined_scores <- oct1_combined_scores %>% mutate(pos = as.integer(pos),
+                                                        len = as.integer(len))
+
+```
+
+```{r}
+oct1_wt = "MPTVDDILEQVGESGWFQKQAFLILCLLSAAFAPICVGIVFLGFTPDHHCQSPGVAELSQRCGWSPAEELNYTVPGLGPAGEAFLGQCRRYEVDWNQSALSCVDPLASLATNRSHLPLGPCQDGWVYDTPGSSIVTEFNLVCADSWKLDLFQSCLNAGFLFGSLGVGYFADRFGRKLCLLGTVLVNAVSGVLMAFSPNYMSMLLFRLLQGLVSKGNWMAGYTLITEFVGSGSRRTVAIMYQMAFTVGLVALTGLAYALPHWRWLQLAVSLPTFLFLLYYWCVPESPRWLLSQKRNTEAIKIMDHIAQKNGKLPPADLKMLSLEEDVTEKLSPSFADLFRTPRLRKRTFILMYLWFTDSVLYQGLILHMGATSGNLYLDFLYSALVEIPGAFIALITIDRVGRIYPMAMSNLLAGAACLVMIFISPDLHWLNIIIMCVGRMGITIAIQMICLVNAELYPTFVRNLGVMVCSSLCDIGGIITPFIVFRLREVWQALPLILFAVLGLLAAGVTLLLPETKGVALPETMKDAENLGRKAKPKENTIYLKVQTSEPSGT"
+
+```
+
+Plot the correlation between the two scores and quantify it.
+
+Plots all (in black) and synonymous (in red) variants, regression line, as well as correlations.
+
+```{r}
+score_plot <- ggplot(oct1_combined_scores %>% filter(mutation_type != "X"),
+                     aes(y = SM73_1_score, x = GFP_score)) +
+  geom_point(alpha = 0.2) +
+  ggtitle('Correlation between function and abundance scores') +
+  stat_cor(method = "spearman", label.x = -5.5, label.y = -1, color = 'black',
+           cor.coef.name = "rho") +
+  geom_smooth(method='lm', se = TRUE) +
+  geom_point(data = oct1_combined_scores %>% filter(mutation_type == "S"),
+             color = 'red', alpha = 0.5) +
+  stat_cor(data = oct1_combined_scores %>% filter(mutation_type == "S"),
+           method = "spearman", label.x = -5.5, label.y = -1.5, color = 'red',
+           cor.coef.name = "rho") +
+  geom_smooth(data = oct1_combined_scores %>% filter(mutation_type == "S"),
+              method='lm', se = TRUE) +
+  ylab("Cytotoxicity score") +
+  xlab("Abundance score") +
+  theme_classic() 
+
+score_plot
+
+ggsave("output/score_correlations.png", width = 5, height = 4, score_plot)
+ggsave("output/score_correlations.pdf", width = 5, height = 4, score_plot)
+
+
+```
+
+Investigate the correlation between the baseline counts and abundance scores
+
+```{r}
+getwd()
+oct1_counts_1SM73_T0_R1_file ="../data/counts/OCT1_full/Cy1a.csv"
+oct1_counts_1SM73_T0_R2_file ="../data/counts/OCT1_full/Cy1b.csv"
+oct1_counts_1SM73_T0_R3_file ="../data/counts/OCT1_full/C.csv"
+
+oct1_counts_1SM73_T0_R1 <- read_delim(oct1_counts_1SM73_T0_R1_file, col_select = !1)
+oct1_counts_1SM73_T0_R2 <- read_delim(oct1_counts_1SM73_T0_R2_file, col_select = !1)
+oct1_counts_1SM73_T0_R3 <- read_delim(oct1_counts_1SM73_T0_R3_file, col_select = !1)
+
+oct1_scores_counts <- full_join(oct1_counts_1SM73_T0_R1, oct1_combined_scores)
+```
+
+```{r}
+score_baseline_plot_abundance <- ggplot(oct1_scores_counts %>% filter(mutation_type != "X"),
+                     aes(y = count, x = GFP_score)) +
+  ggtitle('Baseline library count and abundance score correlation') +
+  geom_point(alpha = 0.2) +
+  stat_cor(method = "spearman", color = 'black', cor.coef.name = "rho") +
+  geom_smooth(method='lm', se = TRUE) +
+  ylab("Baseline count") +
+  xlab("Abundance score") +
+  theme_classic() 
+
+score_baseline_plot_abundance
+
+ggsave("output/score_baseline_plot_abundance.png", width = 5, height = 4, score_baseline_plot_abundance)
+ggsave("output/score_baseline_plot_abundance.pdf", width = 5, height = 4, score_baseline_plot_abundance)
+
+
+score_baseline_plot_sm73 <- ggplot(oct1_scores_counts %>% filter(mutation_type != "X"),
+                     aes(y = count, x = SM73_1_score)) +
+  ggtitle('Baseline library count and function score correlation') +
+  geom_point(alpha = 0.2) +
+  stat_cor(method = "spearman", color = 'black', cor.coef.name = "rho") +
+  geom_smooth(method='lm', se = TRUE) +
+  ylab("Baseline count") +
+  xlab("Abundance score") +
+  theme_classic() 
+
+score_baseline_plot_sm73
+
+ggsave("output/score_baseline_plot_sm73.png", width = 5, height = 4, score_baseline_plot_sm73)
+ggsave("output/score_baseline_plot_sm73.pdf", width = 5, height = 4, score_baseline_plot_sm73)
+
+score_baseline_plots <- score_baseline_plot_abundance + score_baseline_plot_sm73 + 
+                    plot_layout(ncol = 2, nrow = 1, widths = c(5, 5), heights = c(4))
+
+score_baseline_plots
+
+ggsave("output/score_baseline_plots.png", width = 8, height = 4, score_baseline_plots)
+ggsave("output/score_baseline_plots.pdf", width = 8, height = 4, score_baseline_plots)
+
+
+```
+
+```{r}
+
+volcano_GFP <- ggplot(oct1_combined_scores %>% filter(mutation_type != "X"),
+                     aes(y = GFP_SE, x = GFP_score)) +
+  ggtitle('Baseline library count and function score correlation') +
+  geom_point(alpha = 0.2) +
+  ylab("Abundance SE") +
+  xlab("Abundance score") +
+  theme_classic() 
+
+volcano_GFP
+
+volcano_SM73 <- ggplot(oct1_combined_scores %>% filter(mutation_type != "X"),
+                     aes(y = SM73_1_SE, x = SM73_1_score)) +
+  ggtitle('Baseline library count and function score correlation') +
+  geom_point(alpha = 0.2) +
+  ylab("Function SE") +
+  xlab("Function score") +
+  theme_classic() 
+
+volcano_SM73
+
+```
+
+```{r}
+oct1_AF_missense_file ="../data/AlphaMissense_aa_substitutions_O15245.tsv"
+oct1_AF_missense <- read_delim(oct1_AF_missense_file, delim = '\t',
+                               col_names = c('uniprot_id', 'protein_variant',
+                                             'am_pathogenicity', 'am_class')) %>%
+  mutate(protein_variant = paste('p.(', protein_variant, ')', sep = ''))
+
+oct1_AF_missense <- oct1_AF_missense %>% mutate(pos = as.numeric(str_match(protein_variant, "^p.\\([A-Z]([0-9]+)[dA-Z_]\\)")[,2]))
+
+
+oct1_AF_missense_scores <- full_join(oct1_AF_missense, oct1_scores, by = c("protein_variant" = "hgvs"))
+
+oct1_AF_missense_scores <- oct1_AF_missense_scores %>% mutate(pos = as.numeric(str_match(protein_variant, "^p.\\([A-Z]([0-9]+)[dA-Z_]\\)")[,2]))
+
+oct1_AF_missense_scores <- oct1_AF_missense_scores %>% mutate(variants = str_match(protein_variant, "^p.\\([A-Z][0-9]+([dA-Z_])\\)")[,2])
+
+
+
+```
+
+```{r}
+
+AF_correlation <- ggplot(oct1_AF_missense_scores %>% filter(mutation_type != "X"),
+                     aes(y = am_pathogenicity, x = SM73_1_score)) +
+  geom_point(alpha = 0.1, color = 'blue') +
+  ylab("AlphaMissense pathogenicity score") +
+  xlab("Cytotoxicity score") +
+  stat_cor(method = "spearman", label.x = 1, label.y = 0.1, color = 'black',
+           cor.coef.name = "rho") +
+  geom_hline(yintercept = 0.34, linetype = 2) + 
+  geom_hline(yintercept = 0.564, linetype = 2) + 
+  geom_vline(xintercept = 0.6798075, linetype = 2) + 
+  geom_vline(xintercept = -0.8376936, linetype = 2) + 
+  theme_classic() 
+
+AF_correlation
+
+ggsave("output/AF_correlation_sm73.png", width = 5, height = 2, AF_correlation)
+
+
+AF_correlation_GFP <- ggplot(oct1_AF_missense_scores %>% filter(mutation_type != "X"),
+                     aes(y = am_pathogenicity, x = GFP_score)) +
+  geom_point(alpha = 0.1, color = 'red') +
+  ylab("AlphaMissense pathogenicity score") +
+  xlab("Abundance score") +
+  stat_cor(method = "spearman", label.x = -5, label.y = 0.1, color = 'black',
+           cor.coef.name = "rho") +
+  geom_hline(yintercept = 0.34, linetype = 2) + 
+  geom_hline(yintercept = 0.564, linetype = 2) + 
+  geom_vline(xintercept = 0.7967691, linetype = 2) + 
+  geom_vline(xintercept = -0.7207321, linetype = 2) + 
+  theme_classic() 
+
+AF_correlation_GFP
+
+ggsave("output/AF_correlation_GFP.png", width = 5, height = 2, AF_correlation_GFP)
+
+
+folding_plots <- AF_correlation + AF_correlation_GFP + 
+                    plot_layout(ncol = 2, nrow = 1, widths = c(5, 5), heights = c(2))
+
+folding_plots
+
+ggsave("output/AF_correlation_plots.png", width = 10, height = 4, folding_plots)
+ggsave("output/AF_correlation_plots.pdf", width = 10, height = 4, folding_plots)
+
+
+
+```
+
+```{r}
+
+order <- c('D_1', 'H', 'K', 'R', 'D', 'E',
+          'C', 'M', 'N', 'Q', 'S', 'T', 'A', 'I', 'L', 'V', 'W', 'F',
+          'Y', 'G', 'P')
+
+names <- c('Del', 'H', 'K', 'R', 'D', 'E',
+          'C', 'M', 'N', 'Q', 'S', 'T', 'A', 'I', 'L', 'V', 'W', 'F',
+          'Y', 'G', 'P')
+
+oct1_wt = "MPTVDDILEQVGESGWFQKQAFLILCLLSAAFAPICVGIVFLGFTPDHHCQSPGVAELSQRCGWSPAEELNYTVPGLGPAGEAFLGQCRRYEVDWNQSALSCVDPLASLATNRSHLPLGPCQDGWVYDTPGSSIVTEFNLVCADSWKLDLFQSCLNAGFLFGSLGVGYFADRFGRKLCLLGTVLVNAVSGVLMAFSPNYMSMLLFRLLQGLVSKGNWMAGYTLITEFVGSGSRRTVAIMYQMAFTVGLVALTGLAYALPHWRWLQLAVSLPTFLFLLYYWCVPESPRWLLSQKRNTEAIKIMDHIAQKNGKLPPADLKMLSLEEDVTEKLSPSFADLFRTPRLRKRTFILMYLWFTDSVLYQGLILHMGATSGNLYLDFLYSALVEIPGAFIALITIDRVGRIYPMAMSNLLAGAACLVMIFISPDLHWLNIIIMCVGRMGITIAIQMICLVNAELYPTFVRNLGVMVCSSLCDIGGIITPFIVFRLREVWQALPLILFAVLGLLAAGVTLLLPETKGVALPETMKDAENLGRKAKPKENTIYLKVQTSEPSGT"
+
+print_heatmap(oct1_combined_scores, GFP_score, oct1_wt)
+
+```
+
+
+```{r}
+
+variance_plot <- ggplot(data = oct1_AF_missense %>% group_by(pos) %>%
+    summarise(cv = sd(am_pathogenicity, na.rm=T)/abs(mean(am_pathogenicity, na.rm=T))), aes(x = cv)) +
+  geom_density() +
+  geom_density(data = oct1_combined_scores %>% group_by(pos) %>%
+    summarise(cv = sd(SM73_1_score, na.rm=T)/abs(mean(SM73_1_score, na.rm=T))), aes(x = cv), color = "blue", linetype = 2) +
+  geom_density(data = oct1_combined_scores %>% group_by(pos) %>%
+    summarise(cv = sd(GFP_score, na.rm=T)/abs(mean(GFP_score, na.rm=T))), aes(x = cv), color = "red", linetype = 2) +
+  xlim(c(0, 10)) +
+  ylab("Density") +
+  xlab("Coefficient of variation") +
+  theme_classic()
+
+variance_plot
+
+ggsave("output/AF_CV_plot.png", width = 10, height = 5, variance_plot)
+ggsave("output/AF_CV_plot.pdf", width = 10, height = 5, variance_plot)
+
+
+```
+
+
+Write the scores as 3 letter HGVS AAs to submit to MAVE db
+```{r}
+
+write.csv(oct1_combined_scores %>% ungroup() %>% rowwise() %>% mutate(hgvs_3 = convert_1AA_hgvs(hgvs)), "../data/MAVE_db_scores.csv")
+
+```
+
+```{r}
+
+```
+
+
+```

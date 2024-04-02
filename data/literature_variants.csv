@@ -1,0 +1,40 @@
+﻿hgvs,literature_cite,literature_impact_function,literature_impact_trafficking,note
+p.(G165V),Meyer 2020,neutral,,
+p.(G181V),Meyer 2020,neutral,,
+p.(L155V),Meyer 2020,neutral,,
+p.(A31S),Meyer 2022,neutral,,
+p.(C36Y),Meyer 2022,neutral,,
+p.(F32L),Meyer 2022,loss,,
+p.(I24L),Meyer 2022,neutral,,
+p.(L28I),Meyer 2022,neutral,,
+p.(E284K),Seitz 2015,loss,loss,
+p.(G414A),Seitz 2015,neutral,,or loss??
+p.(I449T),Seitz 2015,loss,,
+p.(L160F),Seitz 2015,neutral,,??? F160 or L160?
+p.(Q97K),Seitz 2015,loss,,
+p.(P117L),Seitz 2015,gain,,or neutral - mato??
+p.(R206C),Seitz 2015,loss,,
+p.(S29L),Seitz 2015,loss,loss,
+p.(T245M),Seitz 2015,loss,,
+p.(C88R),"Seitz 2015, Morse 2021",loss,loss,
+p.(F160L),Shu 2003,neutral,neutral,
+p.(G465R),Shu 2003,loss,,
+p.(L85F),Shu 2003,partial_loss,,
+p.(M440I),Shu 2003,partial_loss,,
+p.(V461I),Shu 2003,partial_loss,,
+p.(G220V),"Shu 2003, Seitz 2015",loss,,
+p.(M408V),"Shu 2003, Seitz 2015",neutral,,
+p.(P341L),"Shu 2003, Seitz 2015",neutral,,
+p.(R342H),"Shu 2003, Seitz 2015",neutral,,
+p.(S14F),"Shu 2003, Seitz 2015",loss,,or gain?
+p.(G401S),"Shu 2003, Seitz 2015, Morse 2021",loss,neutral,
+p.(M420del),"Shu 2003, Seitz 2015, Morse 2021",loss,loss,or neutral - mato??
+p.(R488M),"Shu 2003, Seitz 2015, Morse 2021",gain,,
+p.(R61C),"Shu 2003, Seitz 2015, Morse 2021",loss,loss,
+p.(S189L),"Shu 2003, Seitz 2015, Morse 2021",loss,loss,
+p.(Y240F),Uddin 2021,loss,loss,phosphorylation
+p.(Y361F),Uddin 2021,loss,loss,phosphorylation
+p.(Y376F),Uddin 2021,loss,loss,phosphorylation
+p.(P283A),Sprowl 2016,loss,,
+p.(P283L),Sprowl 2016,loss,,??? Is this P341L?
+p.(L160P),Tzvetkov 2009,neutral,,??

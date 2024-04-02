@@ -1,0 +1,412 @@
+---
+title: "OCT1 manuscript - figure 4 generation"
+output: html_notebook
+---
+
+Uncomment this line to repeat the initial OCT1 enrich parsing
+```{r}
+#source("oct1_dms_read_enrich.R")
+```
+
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(ggsankey)
+library(bio3d)
+library(tidyverse)
+library(tidymodels)
+source("dms_analysis_utilities.R")
+```
+
+Define parameters and constants here
+```{r}
+
+cbp2 <- c("#000000", "#E69F00", "#56B4E9", "#009E73",
+          "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+base_text_size = 14
+
+# Cutoffs set from synonymous variant effect distribution in figure 1
+
+#sm73_cutoff = 0.6
+#abundance_cutoff = -0.6
+
+frequency_cutoff = 0.0001
+
+```
+
+
+
+Read score files
+```{r}
+# Enrich2 score files
+oct1_combined_scores_file ="../data/oct1_combined_scores.csv"
+oct1_combined_scores <- read_csv(oct1_combined_scores_file)
+
+oct1_literature_variants_file ="../data/literature_variants.csv"
+oct1_literature_variants <- read_csv(oct1_literature_variants_file)
+
+# Add literature annotations to score file
+oct1_combined_scores <- oct1_combined_scores %>% left_join(oct1_literature_variants, by = "hgvs")
+```
+
+Read in the gnomad data
+```{r}
+gnomad_sw_file <- "../data/gnomAD/gnomad_OCT1DMS.csv"
+gnomad_211_file <- "../data/gnomAD/gnomAD_v2.1.1_ENSG00000175003_2023_02_16_08_30_25.csv"
+gnomad_312_file <- "../data/gnomAD/gnomAD_v3.1.2_ENSG00000175003_2023_02_16_08_33_06.csv"
+
+oct1_gnomad_sw <- read_csv(gnomad_sw_file)
+oct1_gnomad_2 <- read_csv(gnomad_211_file)
+oct1_gnomad_3 <- read_csv(gnomad_312_file)
+```
+
+```{r}
+oct1_combined_scores <- oct1_combined_scores %>% ungroup() %>%
+  rowwise() %>%
+  mutate(hgvs_3 = convert_1AA_hgvs(hgvs),
+         characterized = !is.na(literature_cite))
+
+# Note that there are multiple alleles with identical protein-level effects, so joining based on 
+# protein hgvs will duplicate those variants.
+
+# Also note that gnomad contains variants in alternative transcripts. Our OCT1 is made in the
+# canonical background, corresponding to transcript ENST00000366963.4
+
+oct1_gnomad_2_scores <- oct1_combined_scores %>%
+  ungroup() %>%
+  right_join(oct1_gnomad_2, by = c("hgvs_3" = "Protein Consequence")) %>%
+  filter(Transcript == "ENST00000366963.4") %>%
+  group_by(hgvs) %>%
+  summarize(SM73_1_score = first(SM73_1_score),
+            GFP_score = first(GFP_score),
+            pos = first(pos),
+            len = first(len),
+            is.wt = first(is.wt),
+            `ClinVar Clinical Significance` = first(`ClinVar Clinical Significance`),
+            `Allele Count` = sum(`Allele Count`),
+            literature_cite = first(literature_cite),
+            `Allele Frequency` = sum(`Allele Frequency`))
+```
+
+How many variants do we get scores for?
+
+```{r}
+# Total variants (minus 1, for the wt)
+dim(oct1_gnomad_2_scores)[1] - 1
+
+dim(oct1_gnomad_2_scores %>% filter(!is.na(SM73_1_score)))[1]
+
+dim(oct1_gnomad_2_scores %>% filter(!is.na(GFP_score)))[1]
+
+# Either
+dim(oct1_gnomad_2_scores %>% filter(!is.na(SM73_1_score) & !is.na(GFP_score)))[1]
+
+# Only one
+dim(oct1_gnomad_2_scores %>% filter(!is.na(SM73_1_score) & is.na(GFP_score)))[1]
+dim(oct1_gnomad_2_scores %>% filter(is.na(SM73_1_score) & !is.na(GFP_score)))[1]
+
+# Neither
+dim(oct1_gnomad_2_scores %>% filter(is.na(SM73_1_score) & is.na(GFP_score)))[1]
+
+
+```
+
+
+Panel A - diverging bar chart of scores. color by functional impact
+
+Color by gnomad (for coverage of variants vs ours)
+
+Color by previous literature variants (barplot to show previous vs our own coverage)
+
+Fix coloring
+
+```{r}
+
+ggplot(data = oct1_combined_scores, aes(x = reorder(hgvs, SM73_1_score), y = SM73_1_score, color = factor(characterized))) +
+  geom_bar(aes(fill = factor(characterized)), size = 0.5, stat = "identity", show.legend = FALSE) + 
+  scale_color_manual(values = c("#FFFFFF00", "#D55E00")) +
+  scale_fill_manual(values = c("#FFFFFF00", "#D55E00")) +
+  geom_point(show.legend = FALSE, color = "black") +
+  geom_hline(yintercept = sm73_cutoff, linetype = 2) +
+  geom_hline(yintercept = 0, linetype = 3) +
+  theme_classic(base_size = base_text_size) +
+  theme(axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()
+        ) +
+  xlab('Variant') +
+  ylab('Function score')
+
+ggsave("output/Figure_4A.png", width = 8, height = 4)
+ggsave("output/Figure_4A.pdf", width = 8, height = 4)
+```
+
+Panel C - score vs ethnic group, higher-frequency alleles (> 0.01%)
+
+```{r}
+
+oct1_gnomad_2_groups <- oct1_gnomad_2 %>% 
+  filter(Transcript == "ENST00000366963.4") %>%
+  mutate(`Allele Frequency African/African American` = `Allele Count African/African American`/`Allele Number African/African American`,
+          `Allele Frequency Latino/Admixed American` = `Allele Count Latino/Admixed American`/`Allele Number Latino/Admixed American`,
+          `Allele Frequency Ashkenazi Jewish` = `Allele Count Ashkenazi Jewish`/`Allele Number Ashkenazi Jewish`,
+          `Allele Frequency East Asian` = `Allele Count East Asian`/`Allele Number East Asian`,
+          `Allele Frequency European (Finnish)` = `Allele Count European (Finnish)`/`Allele Number European (Finnish)`,
+          `Allele Frequency European (non-Finnish)` = `Allele Count European (non-Finnish)`/`Allele Number European (non-Finnish)`,
+          `Allele Frequency Other` = `Allele Count Other`/`Allele Number Other`,
+          `Allele Frequency South Asian` = `Allele Count South Asian`/`Allele Number South Asian`) %>%
+  group_by(`Protein Consequence`) %>%
+  summarize(`Allele Frequency` = first(`Allele Frequency`),
+            `Allele Frequency African/African American` = sum(`Allele Frequency African/African American`, na.rm = TRUE),
+            `Allele Frequency Latino/Admixed American` = sum(`Allele Frequency Latino/Admixed American`, na.rm = TRUE),
+            `Allele Frequency Ashkenazi Jewish` = sum(`Allele Frequency Ashkenazi Jewish`, na.rm = TRUE),
+            `Allele Frequency East Asian` = sum(`Allele Frequency East Asian`, na.rm = TRUE),
+            `Allele Frequency European (Finnish)` = sum(`Allele Frequency European (Finnish)`, na.rm = TRUE),
+            `Allele Frequency European (non-Finnish)` = sum(`Allele Frequency European (non-Finnish)`, na.rm = TRUE),
+            `Allele Frequency Other` = sum(`Allele Frequency Other`, na.rm = TRUE),
+            `Allele Frequency South Asian` = sum(`Allele Frequency South Asian`, na.rm = TRUE),
+            `Allele Count` = first(`Allele Count`)) %>%
+            left_join(oct1_combined_scores, by =  c("Protein Consequence" = "hgvs_3")) %>%
+  filter(!is.na(hgvs))
+
+oct1_gnomad_2_groups_full <- oct1_gnomad_2 %>% 
+  filter(Transcript == "ENST00000366963.4") %>%
+  mutate(`Allele Frequency African/African American` = `Allele Count African/African American`/`Allele Number African/African American`,
+          `Allele Frequency Latino/Admixed American` = `Allele Count Latino/Admixed American`/`Allele Number Latino/Admixed American`,
+          `Allele Frequency Ashkenazi Jewish` = `Allele Count Ashkenazi Jewish`/`Allele Number Ashkenazi Jewish`,
+          `Allele Frequency East Asian` = `Allele Count East Asian`/`Allele Number East Asian`,
+          `Allele Frequency European (Finnish)` = `Allele Count European (Finnish)`/`Allele Number European (Finnish)`,
+          `Allele Frequency European (non-Finnish)` = `Allele Count European (non-Finnish)`/`Allele Number European (non-Finnish)`,
+          `Allele Frequency Other` = `Allele Count Other`/`Allele Number Other`,
+          `Allele Frequency South Asian` = `Allele Count South Asian`/`Allele Number South Asian`) %>%
+  group_by(`Protein Consequence`) %>%
+  summarize(`Allele Frequency` = first(`Allele Frequency`),
+            `Allele Frequency African/African American` = sum(`Allele Frequency African/African American`, na.rm = TRUE),
+            `Allele Frequency Latino/Admixed American` = sum(`Allele Frequency Latino/Admixed American`, na.rm = TRUE),
+            `Allele Frequency Ashkenazi Jewish` = sum(`Allele Frequency Ashkenazi Jewish`, na.rm = TRUE),
+            `Allele Frequency East Asian` = sum(`Allele Frequency East Asian`, na.rm = TRUE),
+            `Allele Frequency European (Finnish)` = sum(`Allele Frequency European (Finnish)`, na.rm = TRUE),
+            `Allele Frequency European (non-Finnish)` = sum(`Allele Frequency European (non-Finnish)`, na.rm = TRUE),
+            `Allele Frequency Other` = sum(`Allele Frequency Other`, na.rm = TRUE),
+            `Allele Frequency South Asian` = sum(`Allele Frequency South Asian`, na.rm = TRUE),
+                        `Allele Count` = first(`Allele Count`)) %>%
+            right_join(oct1_combined_scores, by =  c("Protein Consequence" = "hgvs_3")) %>%
+  filter(!is.na(hgvs))
+
+oct1_gnomad_2_groups_long <- oct1_gnomad_2_groups %>% pivot_longer(cols = starts_with("Allele Frequency"),
+                                      names_to = "group",
+                                      values_to = "frequency",
+                                      names_prefix = "Allele Frequency ")
+```
+
+1. Plot (low function) variants per group
+
+```{r}
+ggplot(data = oct1_gnomad_2_groups_long %>% filter(frequency > frequency_cutoff )) +
+  geom_violin(aes(y = SM73_1_score, x = relevel(factor(group), "Allele Frequency"), fill = group)) +
+  geom_boxplot(aes(y = SM73_1_score, x = relevel(factor(group), "Allele Frequency")), width = 0.1) +
+  geom_hline(yintercept = sm73_cutoff, linetype = 2) +
+  theme_classic(base_size = base_text_size) +
+  theme(axis.text.x = element_text(angle = -45, vjust = 0, hjust=0.1),
+        legend.position = 'none') +
+  scale_fill_brewer(type = "qual", palette = 3, aesthetics = "fill") +
+  xlab("Group") +
+  ylab("Functional score")
+
+ggsave("output/Figure_4B.png", width = 8, height = 4)
+ggsave("output/Figure_4B.pdf", width = 8, height = 4)
+
+```
+
+Loss of function is being assigned from the cytotoxicity screen, rather than GFP.
+What about the case where cytotoxicity doesn't have a score, but GFP does?
+In theory, we can assign them based on GFP. In practice, there are only two 
+variants where that occurs, and both are neutral in the GFP screen.
+
+Plot total observed frequencies of _non-synonymous_ alleles
+
+```{r}
+# Filter by function, and color by group
+ggplot(data = oct1_gnomad_2_groups_long %>% filter(SM73_1_score > sm73_cutoff & mutation_type != "S") %>% group_by(group) %>% summarize(total = sum(frequency)),
+       aes(y = total, x = relevel(factor(group), "Allele Frequency"), fill = relevel(factor(group), "Allele Frequency"))) +
+  geom_bar(stat = 'identity') +
+  theme_classic(base_size = base_text_size) +
+  theme(axis.text.x = element_text(angle = -45, vjust = 0, hjust=0.1),
+        legend.position = 'none') +
+  scale_color_brewer(type = "qual", palette = 3, aesthetics = "fill") +
+  xlab("Group") +
+  ylab("Allele frequency (LoF)")
+
+ggsave("output/Figure_4C_low.png", width = 8, height = 4)
+ggsave("output/Figure_4C_low.pdf", width = 8, height = 4)
+
+ggplot(data = oct1_gnomad_2_groups_long %>% filter(mutation_type != "S") %>% group_by(group) %>% summarize(total = sum(frequency)),
+       aes(y = total, x = relevel(factor(group), "Allele Frequency"), fill = relevel(factor(group), "Allele Frequency"))) +
+  geom_bar(stat = 'identity') +
+  geom_bar(stat = 'identity', data = oct1_gnomad_2_groups_long %>% filter(SM73_1_score > sm73_cutoff) %>% group_by(group) %>% summarize(total = sum(frequency)),
+       aes(y = total, x = relevel(factor(group), "Allele Frequency"), fill = relevel(factor(group), "Allele Frequency")), color = 'black') +
+  theme_classic(base_size = base_text_size) +
+  theme(axis.text.x = element_text(angle = -45, vjust = 0, hjust=0.1),
+        legend.position = 'none') +
+  scale_color_brewer(type = "qual", palette = 3, aesthetics = "fill") +
+  xlab("Group") +
+  ylab("Allele frequency (all)")
+
+ggsave("output/Figure_4C_all_outline.png", width = 8, height = 4)
+ggsave("output/Figure_4C_all.pdf", width = 8, height = 4)
+
+ggplot(data = oct1_gnomad_2_groups_long %>% filter(mutation_type != "S") %>% group_by(group) %>% summarize(total = sum(frequency)),
+       aes(y = total, x = relevel(factor(group), "Allele Frequency"), fill = relevel(factor(group), "Allele Frequency"))) +
+  geom_bar(stat = 'identity') +
+  theme_classic(base_size = base_text_size) +
+  theme(axis.text.x = element_text(angle = -45, vjust = 0, hjust=0.1),
+        legend.position = 'none') +
+  scale_color_brewer(type = "qual", palette = 3, aesthetics = "fill") +
+  xlab("Group") +
+  ylab("Allele frequency (all)")
+
+ggsave("output/Figure_4C_all.png", width = 8, height = 4)
+ggsave("output/Figure_4C_all.pdf", width = 8, height = 4)
+
+```
+
+
+Panel D - scores vs gnomad. 
+
+We also color in which variants have been characterized before in the literature.
+
+```{r}
+# Filter by minor allele frequency
+
+ggplot() +
+  geom_density_2d(data = oct1_combined_scores, aes(y = SM73_1_score, x = GFP_score), color = 'black') +
+  geom_point(data = oct1_gnomad_2_scores %>% filter(is.na(literature_cite)), aes(y = SM73_1_score, x = GFP_score), color = '#56B4E9') +
+  geom_point(data = oct1_gnomad_2_scores %>% filter(!is.na(literature_cite)), aes(y = SM73_1_score, x = GFP_score), color = '#D55E00') +
+  geom_hline(yintercept = sm73_cutoff, linetype = 2) +
+  geom_vline(xintercept = abundance_cutoff, linetype = 2) +
+  geom_hline(yintercept = sm73_cutoff_2, linetype = 2) +
+  geom_vline(xintercept = abundance_cutoff_2, linetype = 2) +
+  coord_fixed(ratio = 1) +
+  ylab("Function score") +
+  xlab("Abundance score") +
+  theme_classic(base_size = base_text_size) +
+  theme(legend.position = 'none')
+
+ggsave("output/Figure_4D.png", width = 5, height = 3)
+ggsave("output/Figure_4D.pdf", width = 5, height = 3)
+```
+
+
+Panel E - a contingency table of some sort relating how things break in OCT1.
+Label with numbers as well
+
+Color
+
+Break this out into a _conditional_ probability
+
+```{r}
+
+oct1_gnomad_2_scores %>% ungroup() %>% mutate(sm73_class = case_when(SM73_1_score > sm73_cutoff ~ 'SM73_LoF',
+                                                                     SM73_1_score < sm73_cutoff ~ 'SM73_NGoF',
+                                                                     TRUE ~ ''),
+                                              abundance_class = case_when(GFP_score > abundance_cutoff ~ 'GFP_NGoF',
+                                                                          GFP_score < abundance_cutoff ~ 'GFP_LoF',
+                                                                          TRUE ~ '')) %>% 
+  filter(sm73_class != '' & abundance_class != '') %>%
+  group_by(sm73_class, abundance_class) %>% tally() %>% spread(sm73_class, n) 
+
+
+counts <- c(313, 13, 72, 98)
+sm73_class <- gl(n = 2, k = 1, length = 4, labels = c("GoF/neutral", "LoF"))
+abundance_class <- gl(n = 2, k = 2, length = 4, labels = c("GoF/neutral", "LoF"))
+
+mosaicplot(
+  xtabs(counts ~ sm73_class + abundance_class),
+  color = c("#0072B2", "#CC79A7"),
+  xlab = "Function score class",
+  ylab = "Abundance score class",
+  main = "Variant mechanism classification"
+)
+
+```
+
+
+
+```{r}
+
+oct1_sankey_df <- oct1_gnomad_2_scores %>% filter(!is.wt) %>% ungroup() %>% mutate(sm73_class = case_when(SM73_1_score > sm73_cutoff ~ 'SM73_LoF',
+                                                                     SM73_1_score < sm73_cutoff_2 ~ 'SM73_GoF',
+                                                                     sm73_cutoff_2 < SM73_1_score & SM73_1_score < sm73_cutoff ~ 'SM73_N',
+                                                                     TRUE ~ ''),
+                                              abundance_class = case_when(GFP_score > abundance_cutoff_2 ~ 'GFP_GoF',
+                                                                          GFP_score < abundance_cutoff ~ 'GFP_LoF',
+                                                                          GFP_score > abundance_cutoff & GFP_score < abundance_cutoff_2  ~ 'GFP_N',
+                                                                          TRUE ~ '')) %>% 
+  filter(sm73_class != '' & abundance_class != '') %>% 
+  make_long(abundance_class, sm73_class)
+
+# Dataframe with counts of each class, for annotating the Sankey diagram below.
+
+oct1_gnomad_2_categories <- oct1_gnomad_2_scores %>% filter(!is.wt) %>% ungroup() %>% mutate(sm73_class = case_when(SM73_1_score > sm73_cutoff ~ 'SM73_LoF',
+                                                                     SM73_1_score < sm73_cutoff_2 ~ 'SM73_GoF',
+                                                                     sm73_cutoff_2 < SM73_1_score & SM73_1_score < sm73_cutoff ~ 'SM73_N',
+                                                                     TRUE ~ ''),
+                                              abundance_class = case_when(GFP_score > abundance_cutoff_2 ~ 'GFP_GoF',
+                                                                          GFP_score < abundance_cutoff ~ 'GFP_LoF',
+                                                                          GFP_score > abundance_cutoff & GFP_score < abundance_cutoff_2  ~ 'GFP_N',
+                                                                          TRUE ~ '')) %>% 
+  filter(sm73_class != '' & abundance_class != '') %>% 
+  group_by(abundance_class, sm73_class) %>%
+  summarize(count = n(),
+            sm73_class = first(sm73_class),
+            abundance_class = first(abundance_class)
+            )
+
+plot_sankey <- ggplot(oct1_sankey_df, aes(x = x,
+                      next_x = next_x, 
+                      node = factor(node, levels = c("SM73_LoF", "SM73_N", "SM73_GoF", "GFP_LoF", "GFP_N", "GFP_GoF")),
+                      next_node = next_node,
+                      fill = factor(node, levels = c("SM73_LoF", "SM73_N", "SM73_GoF", "GFP_LoF", "GFP_N", "GFP_GoF")),
+                      label = factor(node, 
+                                     levels = c("SM73_LoF", "SM73_N", "SM73_GoF", "GFP_LoF", "GFP_N", "GFP_GoF"),
+                                     labels = c("86", "256", "21", "125", "229", "9")))) +
+  scale_fill_manual(values=c( "#F2A9F5", "#d73027", "grey",
+                             "#52A899", "blue", "grey")) +
+  geom_sankey(node.color = "black",
+              flow.color = "black",
+              flow.alpha = 0.8) +
+  theme_classic() +
+  theme(axis.ticks.y = element_blank(),
+        axis.text.y = element_blank()) + 
+  labs(fill = "")
+
+print(plot_sankey)
+
+ggsave("output/Figure_4E.png", width = 5, height = 3, plot_sankey)
+ggsave("output/Figure_4E.pdf", width = 5, height = 3, plot_sankey)
+
+```
+
+
+Panel E - mapping the above onto structure (cartooned)
+
+example code below
+```{r}
+write.csv(
+  oct1_gnomad_2_scores %>% ungroup() %>% mutate(sm73_class = case_when(SM73_1_score > sm73_cutoff ~ 'SM73_LoF',
+                                                                     SM73_1_score < sm73_cutoff_2 ~ 'SM73_GoF',
+                                                                     sm73_cutoff_2 < SM73_1_score & SM73_1_score < sm73_cutoff ~ 'SM73_N',
+                                                                     TRUE ~ ''),
+                                              abundance_class = case_when(GFP_score > abundance_cutoff_2 ~ 'GFP_GoF',
+                                                                          GFP_score < abundance_cutoff ~ 'GFP_LoF',
+                                                                          GFP_score > abundance_cutoff & GFP_score < abundance_cutoff_2  ~ 'GFP_N',
+                                                                          TRUE ~ '')),
+  "~/Desktop/gnomad.csv"
+)
+
+#x = map_scores_pdb(a_apo, oct1_avg_scores, "")
+#write.pdb(x, file="../data/structures/scores/A_apo_sm73.pdb")
+
+```
+

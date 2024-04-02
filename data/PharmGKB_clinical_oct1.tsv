@@ -1,0 +1,13 @@
+PharmGKB ID	Level	Variant	Gene	Drugs	Phenotype Categories	Phenotype	Pediatric	hgvs
+1450373589	3	rs628031	SLC22A1	imatinib	"Efficacy,Metabolism/PK,Toxicity"	Neoplasms	FALSE	M408L
+1444607634	3	rs628031	SLC22A1	metformin	Efficacy	"Diabetes Mellitus, Type 2"	FALSE	M408L
+1448263578	3	rs628031	SLC22A1	lamotrigine	Metabolism/PK	Epilepsy	FALSE	M408L
+1183618209	3	rs35167514	SLC22A1	tramadol	Other		FALSE	M420del
+1449165230	3	rs12208357	SLC22A1	metformin	Metabolism/PK		FALSE	R61C
+1183618204	3	rs34130495	SLC22A1	tramadol	Other		FALSE	G401S
+1449164752	3	rs683369	SLC22A1	imatinib	Toxicity	Gastrointestinal Stromal Tumors	FALSE	L160F
+1451336020	3	rs34059508	SLC22A1	olanzapine	Metabolism/PK		FALSE	G465R
+1444607744	3	rs72552763	SLC22A1	metformin	Metabolism/PK		FALSE	M420del
+1183618199	3	rs12208357	SLC22A1	tramadol	Metabolism/PK		FALSE	R61C
+1183697747	3	rs2282143	SLC22A1	metformin	Metabolism/PK		FALSE	P341L
+1444686850	3	rs683369	SLC22A1	imatinib	"Efficacy,Metabolism/PK"	"Leukemia, Myelogenous, Chronic, BCR-ABL Positive"	FALSE	L160F

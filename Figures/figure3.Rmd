@@ -1,0 +1,769 @@
+---
+title: "OCT1 manuscript - figure 3 generation"
+output: html_notebook
+---
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(bio3d)
+library(tidyverse)
+library(tidymodels)
+library(patchwork)
+
+source("dms_analysis_utilities.R")
+
+```
+
+1-12
+44-132
+283-340
+514-535
+
+
+Import the "functional importance" and abundance scores
+
+
+```{r}
+# Enrich2 score files
+oct1_func_file ="../data/low_func_specific.csv"
+oct1_func <- read_csv(oct1_func_file) %>% select(-...1)
+
+oct1_abundance_file ="../data/lowabundance.csv"
+oct1_abundance <- read_csv(oct1_abundance_file) %>% select(-...1)
+
+oct1_avg_scores <- oct1_combined_scores %>% group_by(pos) %>% summarise(avg_0_SM73 = mean(SM73_0_score, na.rm=TRUE),
+                                            avg_1_SM73 = mean(SM73_1_score, na.rm=TRUE), 
+                                            avg_A = mean(GFP_score, na.rm=TRUE)) %>%
+  right_join(oct1_func, by = "pos") %>% 
+  right_join(oct1_abundance, by = "pos")
+  
+
+oct1_wt_fasta = "../data/sequences/OCT1_ref.fasta"
+
+oct1_wt_fasta_con=file(oct1_wt_fasta, open="r")
+oct1_wt_sequence = readLines(oct1_wt_fasta_con)[2]
+close(oct1_wt_fasta_con)
+
+
+```
+
+
+```{r}
+
+# Add structural features
+a_apo <- read.pdb("../data/structures/A_apo.pdb")
+b_apo <- read.pdb("../data/structures/B_apo.pdb")
+c_apo <- read.pdb("../data/structures/C_apo.pdb")
+d_apo <- read.pdb("../data/structures/D_apo.pdb")
+e_apo <- read.pdb("../data/structures/E_apo.pdb")
+
+a_mpp <- read.pdb("../data/structures/A_mpp.pdb")
+b_mpp <- read.pdb("../data/structures/B_mpp.pdb")
+c_mpp <- read.pdb("../data/structures/C_mpp.pdb")
+d_mpp <- read.pdb("../data/structures/D_mpp.pdb")
+
+a_apo_TM <- trim.pdb(a_apo, atom.select(a_apo, resno=c(13:43,133:282,341:513)))
+b_apo_TM <- trim.pdb(b_apo, atom.select(b_apo, resno=c(13:43,133:282,341:513)))
+c_apo_TM <- trim.pdb(c_apo, atom.select(c_apo, resno=c(13:43,133:282,341:513)))
+d_apo_TM <- trim.pdb(d_apo, atom.select(d_apo, resno=c(13:43,133:282,341:513)))
+e_apo_TM <- trim.pdb(e_apo, atom.select(e_apo, resno=c(13:43,133:282,341:513)))
+
+a_mpp_TM <- trim.pdb(a_mpp, atom.select(a_mpp, resno=c(13:43,133:282,341:513)))
+b_mpp_TM <- trim.pdb(b_mpp, atom.select(b_mpp, resno=c(13:43,133:282,341:513)))
+c_mpp_TM <- trim.pdb(c_mpp, atom.select(c_mpp, resno=c(13:43,133:282,341:513)))
+d_mpp_TM <- trim.pdb(d_mpp, atom.select(d_mpp, resno=c(13:43,133:282,341:513)))
+
+
+oct1_pdbs <- pdbaln(list(a_apo, b_apo, c_apo, d_apo, e_apo,
+  a_mpp, b_mpp, c_mpp, d_mpp), fit = TRUE)
+
+oct1_pdbs$id = c("a_apo", "b_apo", "c_apo", "d_apo", "e_apo",
+               "a_mpp", "b_mpp", "c_mpp", "d_mpp")
+
+TM_pdbs <- pdbaln(list(a_apo_TM, b_apo_TM, c_apo_TM, d_apo_TM, e_apo_TM,
+  a_mpp_TM, b_mpp_TM, c_mpp_TM, d_mpp_TM), fit = TRUE)
+
+TM_pdbs$id = c("a_apo_TM", "b_apo_TM", "c_apo_TM", "d_apo_TM", "e_apo_TM",
+               "a_mpp_TM", "b_mpp_TM", "c_mpp_TM", "d_mpp_TM")
+
+TM_rmsds <- rmsd(TM_pdbs, fit=TRUE)
+
+TM_rmsds
+```
+
+
+
+
+```{r}
+
+x = map_scores_pdb(a_apo, oct1_avg_scores, "avg_1_SM73")
+write.pdb(x, file="../data/structures/scores/A_apo_sm73.pdb")
+x = map_scores_pdb(a_apo, oct1_avg_scores, "avg_A")
+write.pdb(x, file="../data/structures/scores/A_apo_gfp.pdb")
+
+x = map_scores_pdb(b_apo, oct1_avg_scores, "avg_1_SM73")
+write.pdb(x, file="../data/structures/scores/B_apo_sm73.pdb")
+x = map_scores_pdb(b_apo, oct1_avg_scores, "avg_A")
+write.pdb(x, file="../data/structures/scores/B_apo_gfp.pdb")
+
+x = map_scores_pdb(c_apo, oct1_avg_scores, "avg_1_SM73")
+write.pdb(x, file="../data/structures/scores/C_apo_sm73.pdb")
+x = map_scores_pdb(c_apo, oct1_avg_scores, "avg_A")
+write.pdb(x, file="../data/structures/scores/C_apo_gfp.pdb")
+
+x = map_scores_pdb(d_apo, oct1_avg_scores, "avg_1_SM73")
+write.pdb(x, file="../data/structures/scores/D_apo_sm73.pdb")
+x = map_scores_pdb(d_apo, oct1_avg_scores, "avg_A")
+write.pdb(x, file="../data/structures/scores/D_apo_gfp.pdb")
+
+x = map_scores_pdb(e_apo, oct1_avg_scores, "avg_1_SM73")
+write.pdb(x, file="../data/structures/scores/E_apo_sm73.pdb")
+x = map_scores_pdb(e_apo, oct1_avg_scores, "avg_A")
+write.pdb(x, file="../data/structures/scores/E_apo_gfp.pdb")
+
+x = map_scores_pdb(a_mpp, oct1_avg_scores, "avg_1_SM73")
+write.pdb(x, file="../data/structures/scores/A_mpp_sm73.pdb")
+x = map_scores_pdb(a_mpp, oct1_avg_scores, "avg_A")
+write.pdb(x, file="../data/structures/scores/A_mpp_gfp.pdb")
+
+x = map_scores_pdb(b_mpp, oct1_avg_scores, "avg_1_SM73")
+write.pdb(x, file="../data/structures/scores/B_mpp_sm73.pdb")
+x = map_scores_pdb(b_mpp, oct1_avg_scores, "avg_A")
+write.pdb(x, file="../data/structures/scores/B_mpp_gfp.pdb")
+
+x = map_scores_pdb(c_mpp, oct1_avg_scores, "avg_1_SM73")
+write.pdb(x, file="../data/structures/scores/C_mpp_sm73.pdb")
+x = map_scores_pdb(c_mpp, oct1_avg_scores, "avg_A")
+write.pdb(x, file="../data/structures/scores/C_mpp_gfp.pdb")
+
+x = map_scores_pdb(d_mpp, oct1_avg_scores, "avg_1_SM73")
+write.pdb(x, file="../data/structures/scores/D_mpp_sm73.pdb")
+x = map_scores_pdb(d_mpp, oct1_avg_scores, "avg_A")
+write.pdb(x, file="../data/structures/scores/D_mpp_gfp.pdb")
+```
+
+```{r}
+x = map_scores_pdb(a_apo, oct1_pos_scores, "low_function")
+write.pdb(x, file="../data/structures/scores/A_apo_func.pdb")
+x = map_scores_pdb(a_apo, oct1_pos_scores, "low_GFP")
+write.pdb(x, file="../data/structures/scores/A_apo_abundance.pdb")
+
+x = map_scores_pdb(b_apo, oct1_pos_scores, "low_function")
+write.pdb(x, file="../data/structures/scores/B_apo_func.pdb")
+x = map_scores_pdb(b_apo, oct1_pos_scores, "low_GFP")
+write.pdb(x, file="../data/structures/scores/B_apo_abundance.pdb")
+
+x = map_scores_pdb(c_apo, oct1_pos_scores, "low_function")
+write.pdb(x, file="../data/structures/scores/C_apo_func.pdb")
+x = map_scores_pdb(c_apo, oct1_pos_scores, "low_GFP")
+write.pdb(x, file="../data/structures/scores/C_apo_abundance.pdb")
+
+x = map_scores_pdb(d_apo, oct1_pos_scores, "low_function")
+write.pdb(x, file="../data/structures/scores/D_apo_func.pdb")
+x = map_scores_pdb(d_apo, oct1_pos_scores, "low_GFP")
+write.pdb(x, file="../data/structures/scores/D_apo_abundance.pdb")
+
+x = map_scores_pdb(e_apo, oct1_pos_scores, "low_function")
+write.pdb(x, file="../data/structures/scores/E_apo_func.pdb")
+x = map_scores_pdb(e_apo, oct1_pos_scores, "low_GFP")
+write.pdb(x, file="../data/structures/scores/E_apo_abundance.pdb")
+
+x = map_scores_pdb(a_mpp, oct1_pos_scores, "low_function")
+write.pdb(x, file="../data/structures/scores/A_mpp_func.pdb")
+x = map_scores_pdb(a_mpp, oct1_pos_scores, "low_GFP")
+write.pdb(x, file="../data/structures/scores/A_mpp_abundance.pdb")
+
+x = map_scores_pdb(b_mpp, oct1_pos_scores, "low_function")
+write.pdb(x, file="../data/structures/scores/B_mpp_func.pdb")
+x = map_scores_pdb(b_mpp, oct1_pos_scores, "low_GFP")
+write.pdb(x, file="../data/structures/scores/B_mpp_abundance.pdb")
+
+x = map_scores_pdb(c_mpp, oct1_pos_scores, "low_function")
+write.pdb(x, file="../data/structures/scores/C_mpp_func.pdb")
+x = map_scores_pdb(c_mpp, oct1_pos_scores, "low_GFP")
+write.pdb(x, file="../data/structures/scores/C_mpp_abundance.pdb")
+
+x = map_scores_pdb(d_mpp, oct1_pos_scores, "low_function")
+write.pdb(x, file="../data/structures/scores/D_mpp_func.pdb")
+x = map_scores_pdb(d_mpp, oct1_pos_scores, "low_GFP")
+write.pdb(x, file="../data/structures/scores/D_mpp_abundance.pdb")
+
+```
+
+
+Identify the residues in the binding pocket - and analyze their physical chemistry.
+
+Identify all residues within 5 A of MPP in any state, using pymol.
+
+Also, to approximate the trajectory, calculate for each state the residues within 
+slightly more stringent 4 A of MPP, using pymol.
+
+```{r}
+
+pocket_residues = c(32, 36, 37, 40, 41, 156, 159, 214, 217, 218, 238,
+                    240, 241, 242, 244, 245, 248, 354, 361, 362, 365,
+                    368, 379, 383, 386, 390, 439, 443, 446, 447, 450, 473, 474)
+
+pocket_residues_A = c(37, 40, 244, 245, 248, 361, 362, 365, 379, 386, 439, 443)
+pocket_residues_B = c(32, 214, 217, 241, 242, 244, 245, 354, 361, 386, 443, 446, 447, 473)
+pocket_residues_C = c(32, 36, 214, 217, 241, 244, 245, 361, 362, 386, 443, 446, 447)
+pocket_residues_D = c(32, 36, 159, 214, 217, 241, 244, 245, 361, 362, 386)
+
+
+oct1_pos_scores <- oct1_pos_scores %>% mutate(pocket = ifelse(pos %in% pocket_residues, 1, 0),
+                                              pocket_A = ifelse(pos %in% pocket_residues_A, 1, 0),
+                                              pocket_B = ifelse(pos %in% pocket_residues_B, 1, 0),
+                                              pocket_C = ifelse(pos %in% pocket_residues_C, 1, 0),
+                                              pocket_D = ifelse(pos %in% pocket_residues_D, 1, 0)
+                                              )
+                                        
+ggplot(data = oct1_pos_scores) +
+  geom_violin(aes(y = low_function, fill = factor(pocket), x = factor(pocket))) +
+  geom_boxplot(aes(y = low_function, x = factor(pocket)), width = 0.05) +
+  theme_classic(base_size = base_text_size) +
+  scale_fill_manual(values = c("grey", "blue")) +
+  scale_x_discrete(labels=c("0" = "Nonbinding",
+                            "1" = "Binding")) +
+  theme(legend.position = "none",
+        ) +
+  xlab('') +
+  ylab('Functional importance')
+
+ggsave("output/Figure_3_pocket_1.png", width = 4, height = 4)
+ggsave("output/Figure_3_pocket_1.pdf", width = 4, height = 4)
+
+
+ggplot(data = oct1_pos_scores) +
+  geom_violin(aes(y = low_GFP, fill = factor(pocket), x = factor(pocket))) +
+  geom_boxplot(aes(y = low_GFP, x = factor(pocket)), width = 0.05) +
+  theme_classic(base_size = base_text_size) +
+  scale_fill_manual(values = c("grey", "red")) +
+  scale_x_discrete(labels=c("0" = "Nonbinding",
+                            "1" = "Binding")) +
+  theme(legend.position = "none"
+        ) +
+  xlab('') +
+  ylab('Folding importance')
+
+ggsave("output/Figure_3_pocket_2.png", width = 4, height = 4)
+ggsave("output/Figure_3_pocket_2.pdf", width = 4, height = 4)
+```
+
+Plot the state-dependent pocket correlations.
+
+```{r}
+pocket_function_A <- ggplot(data = oct1_pos_scores) +
+  geom_violin(aes(y = low_function, fill = factor(pocket_A), x = factor(pocket_A))) +
+  geom_boxplot(aes(y = low_function, x = factor(pocket_A)), width = 0.05) +
+  theme_classic(base_size = base_text_size) +
+  scale_fill_manual(values = c("grey", "blue")) +
+  scale_x_discrete(labels=c("0" = "Nonbinding",
+                            "1" = "Binding")) +
+  theme(legend.position = "none",
+        ) +
+  xlab('') +
+  ylab('Functional score') +
+  ggtitle('State A')
+
+pocket_folding_A <- ggplot(data = oct1_pos_scores) +
+  geom_violin(aes(y = low_GFP, fill = factor(pocket_A), x = factor(pocket_A))) +
+  geom_boxplot(aes(y = low_GFP, x = factor(pocket_A)), width = 0.05) +
+  theme_classic(base_size = base_text_size) +
+  scale_fill_manual(values = c("grey", "red")) +
+  scale_x_discrete(labels=c("0" = "Nonbinding",
+                            "1" = "Binding")) +
+  theme(legend.position = "none"
+        ) +
+  xlab('') +
+  ylab('Folding score') +
+  ggtitle('State A')
+
+pocket_function_B <- ggplot(data = oct1_pos_scores) +
+  geom_violin(aes(y = low_function, fill = factor(pocket_B), x = factor(pocket_B))) +
+  geom_boxplot(aes(y = low_function, x = factor(pocket_B)), width = 0.05) +
+  theme_classic(base_size = base_text_size) +
+  scale_fill_manual(values = c("grey", "blue")) +
+  scale_x_discrete(labels=c("0" = "Nonbinding",
+                            "1" = "Binding")) +
+  theme(legend.position = "none",
+        ) +
+  xlab('') +
+  ylab('Functional score') +
+  ggtitle('State B')
+
+pocket_folding_B <- ggplot(data = oct1_pos_scores) +
+  geom_violin(aes(y = low_GFP, fill = factor(pocket_B), x = factor(pocket_B))) +
+  geom_boxplot(aes(y = low_GFP, x = factor(pocket_B)), width = 0.05) +
+  theme_classic(base_size = base_text_size) +
+  scale_fill_manual(values = c("grey", "red")) +
+  scale_x_discrete(labels=c("0" = "Nonbinding",
+                            "1" = "Binding")) +
+  theme(legend.position = "none"
+        ) +
+  xlab('') +
+  ylab('Folding score') +
+  ggtitle('State B')
+
+pocket_function_C <- ggplot(data = oct1_pos_scores) +
+  geom_violin(aes(y = low_function, fill = factor(pocket_C), x = factor(pocket_C))) +
+  geom_boxplot(aes(y = low_function, x = factor(pocket_C)), width = 0.05) +
+  theme_classic(base_size = base_text_size) +
+  scale_fill_manual(values = c("grey", "blue")) +
+  scale_x_discrete(labels=c("0" = "Nonbinding",
+                            "1" = "Binding")) +
+  theme(legend.position = "none",
+        ) +
+  xlab('') +
+  ylab('Functional score') +
+  ggtitle('State C')
+
+pocket_folding_C <- ggplot(data = oct1_pos_scores) +
+  geom_violin(aes(y = low_GFP, fill = factor(pocket_C), x = factor(pocket_C))) +
+  geom_boxplot(aes(y = low_GFP, x = factor(pocket_C)), width = 0.05) +
+  theme_classic(base_size = base_text_size) +
+  scale_fill_manual(values = c("grey", "red")) +
+  scale_x_discrete(labels=c("0" = "Nonbinding",
+                            "1" = "Binding")) +
+  theme(legend.position = "none"
+        ) +
+  xlab('') +
+  ylab('Folding score') +
+  ggtitle('State C')
+
+pocket_function_D <- ggplot(data = oct1_pos_scores) +
+  geom_violin(aes(y = low_function, fill = factor(pocket_D), x = factor(pocket_D))) +
+  geom_boxplot(aes(y = low_function, x = factor(pocket_D)), width = 0.05) +
+  theme_classic(base_size = base_text_size) +
+  scale_fill_manual(values = c("grey", "blue")) +
+  scale_x_discrete(labels=c("0" = "Nonbinding",
+                            "1" = "Binding")) +
+  theme(legend.position = "none",
+        ) +
+  xlab('') +
+  ylab('Functional score') +
+  ggtitle('State D')
+
+pocket_folding_D <- ggplot(data = oct1_pos_scores) +
+  geom_violin(aes(y = low_GFP, fill = factor(pocket_D), x = factor(pocket_D))) +
+  geom_boxplot(aes(y = low_GFP, x = factor(pocket_D)), width = 0.05) +
+  theme_classic(base_size = base_text_size) +
+  scale_fill_manual(values = c("grey", "red")) +
+  scale_x_discrete(labels=c("0" = "Nonbinding",
+                            "1" = "Binding")) +
+  theme(legend.position = "none"
+        ) +
+  xlab('') +
+  ylab('Folding score') +
+  ggtitle('State D')
+
+ggsave("output/Figure_3_pocket_scores_A.png", width = 6, height = 3, pocket_function_A + pocket_folding_A)
+ggsave("output/Figure_3_pocket_scores_B.png", width = 6, height = 3, pocket_function_B + pocket_folding_B)
+ggsave("output/Figure_3_pocket_scores_C.png", width = 6, height = 3, pocket_function_C + pocket_folding_C)
+ggsave("output/Figure_3_pocket_scores_D.png", width = 6, height = 3, pocket_function_D + pocket_folding_D)
+
+
+
+scores_A_B <- ((pocket_function_A + pocket_folding_A) /
+     (pocket_function_B + pocket_folding_B))
+
+ggsave("output/Figure_3_pocket_scores_AB.png", width = 6, height = 4, scores_A_B)
+
+
+scores_C_D <- ((pocket_function_C + pocket_folding_C) /
+                 (pocket_function_D + pocket_folding_D))
+
+ggsave("output/Figure_3_pocket_scores_CD.png", width = 4, height = 4, scores_C_D)
+
+
+```
+
+
+Measure correlations with physical chemical properties of binding residues.
+
+Different analysis - use WT identity and changes to specific types of residues,
+rather than distance in some property space.
+
+Functional importance scores correlation with residue identities
+
+```{r}
+oct1_combined_scores <- oct1_combined_scores %>% mutate(pocket = ifelse(pos %in% pocket_residues, 1, 0),
+                                                 pocket_A = ifelse(pos %in% pocket_residues_A, 1, 0),
+                                                 pocket_B = ifelse(pos %in% pocket_residues_B, 1, 0),
+                                                 pocket_C = ifelse(pos %in% pocket_residues_C, 1, 0),
+                                                 pocket_D = ifelse(pos %in% pocket_residues_D, 1, 0))
+### Physicochem boxplots function
+order <- c('aromatic', 'aliphatic', 'hydrophobic', 'branched', 'small',
+          'polar', 'negative', 'positive', 'polar_uncharged', 'proton_don_acc',
+          'helix_break', 'cysteine', 'deletion', 'Glycine', 'Proline')
+
+hydrophobic <- c('I','L','V','M','C','A','T','H','K','W','Y','F')
+aromatic <- c('W','F','Y','H')
+aliphatic <- c('V','A','L','I')
+small <- c('C','V','A','C','T','S','G')
+tiny <- c('G','S','C','A')
+charged <- c('R','K','H', 'D','E')
+positive <- c('R','K','H')
+negative <- c('D','E')
+polar <- c('N','Q','C','S','H','Y','T','R','K','D','E')
+polar_uncharged <- c('N','Q','C','S','T')
+branched <- c('V','I','T')
+helix_break <- c('G','P')
+proton_don_acc <- c('C','H')
+cysteine <- c('C')
+deletion <- c('D_1')
+Glycine <- c('G')
+Proline <- c('P')
+
+oct1_function_aromatic <- oct1_combined_scores %>% filter(wt_pos %in% aromatic)
+
+oct1_function_negative <- oct1_combined_scores %>% filter(wt_pos %in% negative)
+
+oct1_function_aliphatic <- oct1_combined_scores %>% filter(wt_pos %in% aliphatic)
+
+function_aromatic_plot <- bind_rows(aromatic = oct1_function_aromatic %>% filter(variants %in% aromatic),
+          aliphatic = oct1_function_aromatic %>% filter(variants %in% aliphatic),
+          positive = oct1_function_negative %>% filter(variants %in% positive),
+          polar = oct1_function_aromatic %>% filter(variants %in% polar),
+          deletion = oct1_function_aromatic %>% filter(variants %in% deletion),
+          .id = "mutated_physicochem"
+          ) %>%
+  mutate(mutated_physicochem = factor(mutated_physicochem, 
+                                      levels = c("aromatic", 
+                                                 "aliphatic",
+                                                 "positive",
+                                                 "polar",
+                                                 "deletion"))) %>%
+  ggplot(aes(x = mutated_physicochem, y = SM73_1_score, fill = factor(pocket))) +
+  scale_fill_manual(values = c("grey", "blue")) +
+  geom_boxplot() +
+  ylab("Function score") +
+  xlab("Variant class") +
+  ggtitle("WT: Aromatic (F, Y, W, H)") +
+  scale_x_discrete(labels=c('Aromatic',
+                            'Aliphatic',
+                            'Positive',
+                            'Polar',
+                            'Deletion')) +
+  theme_classic() +
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = -45, vjust = 0, hjust=0))
+
+function_negative_plot <- bind_rows(negative = oct1_function_negative %>% filter(variants %in% negative),
+          positive = oct1_function_negative %>% filter(variants %in% positive),
+          polar_uncharged = oct1_function_negative %>% filter(variants %in% polar_uncharged),
+          aromatic = oct1_function_negative %>% filter(variants %in% aromatic),
+          deletion = oct1_function_negative %>% filter(variants %in% deletion),
+          .id = "mutated_physicochem"
+          ) %>%
+  mutate(mutated_physicochem = factor(mutated_physicochem, 
+                                      levels = c("negative", 
+                                                 "positive", 
+                                                 "polar_uncharged",
+                                                 "aromatic",
+                                                 "deletion"))) %>%
+  ggplot(aes(x = mutated_physicochem, y = SM73_1_score, fill = factor(pocket))) +
+  scale_fill_manual(values = c("grey", "blue")) +
+  geom_boxplot() +
+  ylab("Function score") +
+  xlab("Variant class") +
+  ggtitle("WT: Negative Charge (D, E)") +
+  scale_x_discrete(labels=c('Negative',
+                            'Positive',
+                            'Polar uncharged',
+                            'Aromatic',
+                            'Deletion')) +
+  theme_classic() +
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = -45, vjust = 0, hjust=0))
+
+function_aliphatic_plot <- bind_rows(aliphatic = oct1_function_aliphatic %>% filter(variants %in% aliphatic),
+          aromatic = oct1_function_aliphatic %>% filter(variants %in% aromatic),
+          polar = oct1_function_aliphatic %>% filter(variants %in% polar),
+          charged = oct1_function_aliphatic %>% filter(variants %in% charged),
+          deletion = oct1_function_aliphatic %>% filter(variants %in% deletion),
+          .id = "mutated_physicochem"
+          ) %>%
+  mutate(mutated_physicochem = factor(mutated_physicochem, 
+                                      levels = c("aliphatic", 
+                                                 "aromatic",
+                                                 "polar", 
+                                                 "charged",
+                                                 "deletion"))) %>%
+  ggplot(aes(x = mutated_physicochem, y = SM73_1_score, fill = factor(pocket))) +
+  scale_fill_manual(values = c("grey", "blue")) +
+  geom_boxplot() +
+  ylab("Function score") +
+  xlab("Variant class") +
+  ggtitle("WT: Aliphatic (V, A, L, I)") +
+  scale_x_discrete(labels=c('Aliphatic',
+                            'Aromatic',
+                            'Polar',
+                            'Charged',
+                            'Deletion')) +
+  theme_classic() +
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = -45, vjust = 0, hjust=0))
+
+
+function_plots <- function_aromatic_plot + function_negative_plot + function_aliphatic_plot
+                    plot_layout(ncol = 3, nrow = 1, widths = c(3, 3, 3), heights = c(2))
+
+plot(function_plots)
+
+ggsave("output/Figure_3_function_plots.png", width = 9, height = 4, function_plots)
+ggsave("output/Figure_3_function_plots.pdf", width = 9, height = 4, function_plots)
+
+```
+
+Calculate distance matrix between states
+```{r}
+#filled.contour(dm(b_apo, inds="calpha"))
+#d_mpp
+
+
+states_aligned <- pdbaln(list(b_apo, d_mpp))
+
+b_apo_dm <- dm.xyz(states_aligned$xyz[1,])
+d_mpp_dm <- dm.xyz(states_aligned$xyz[2,])
+
+fit.xyz(fixed = states_aligned$xyz[1,],
+        mobile = states_aligned)
+
+# Calculate DDM
+diff_dm <- b_apo_dm - d_mpp_dm
+
+# Plot DDM
+plot(diff_dm,key=FALSE, grid=FALSE)
+
+plot(diff_dm, axis.tick.space=20,
+     resnum.1=states_aligned$resno[1,],
+     resnum.2=states_aligned$resno[2,],
+     grid.col="black")
+
+states_aligned$xyz
+
+# select mainchain atoms
+sele <- atom.select(states_aligned, elety=c("CA"))
+
+# residue numbers to group by
+resno <- states_aligned$atom$resno[sele$atom]
+
+# mean rmsf value of mainchain atoms of each residue
+r <- rmsf(states_aligned$xyz[, sele$xyz], grpby=resno)
+
+plot.bio3d(r, resno=states_aligned, ylab="RMSF (A)")
+
+```
+
+```{r}
+
+tm2_start = 146
+tm2_end = 163
+
+tm11_start = 469
+tm11_end = 487
+
+tm2_length = tm2_end - tm2_start
+tm11_length = tm11_end - tm11_start
+
+tm_ratio = tm2_length / tm11_length
+tm_ratio = 1
+
+tm2_d_contacts <- c()
+tm11_d_contacts <- c()
+tm2_d_contacts_scaled <- c()
+tm11_d_contacts_scaled <- c()
+tm211_d_contacts <- c()
+tm211_d_contacts_scaled <- c()
+
+tm2_b_contacts <- c()
+tm11_b_contacts <- c()
+tm2_b_contacts_scaled <- c()
+tm11_b_contacts_scaled <- c()
+tm211_b_contacts <- c()
+tm211_b_contacts_scaled <- c()
+
+distance <- 8
+
+for (n in tm2_start:tm2_end) {
+  x <- d_mpp_dm[n, c(tm11_start:tm11_end)][d_mpp_dm[n, c(tm11_start:tm11_end)] < distance]
+  
+  if (length(x) > 0) {
+    
+    # Flip the TM11 scale, since these are antiparallel helices.
+    scaled_x <- ((as.integer(names(x)) - tm11_start) / (tm11_end - tm11_start))
+    scaled_n <- 1 - (n - tm2_start) / (tm2_end-tm2_start) * (tm_ratio) + (0.5 - 0.5*(tm_ratio))
+    
+    tm2_d_contacts <- c(tm2_d_contacts, rep(n, length(x)))
+    tm11_d_contacts <- c(tm11_d_contacts, as.integer(names(x)))
+
+    tm2_d_contacts_scaled <- c(tm2_d_contacts_scaled, rep(scaled_n, length(x)))
+    tm11_d_contacts_scaled <- c(tm11_d_contacts_scaled, scaled_x)
+    
+    tm211_d_contacts_scaled <- c(tm211_d_contacts_scaled, c(rbind(rep(scaled_n, length(x)), scaled_x)))
+    tm211_d_contacts <- c(tm211_d_contacts, c(rbind(rep(n, length(x)), names(x))))
+  }
+}
+
+
+for (n in tm2_start:tm2_end) {
+  x <- b_apo_dm[n, c(tm11_start:tm11_end)][b_apo_dm[n, c(tm11_start:tm11_end)] < distance]
+  
+  if (length(x) > 0) {
+    print(x)
+    
+    # Flip the TM11 scale, since these are antiparallel helices.
+    scaled_x <- ((as.integer(names(x)) - tm11_start) / (tm11_end - tm11_start))
+    scaled_n <- 1 - (n - tm2_start) / (tm2_end-tm2_start) * (tm_ratio) + (0.5 - 0.5*(tm_ratio))
+    
+    tm2_b_contacts <- c(tm2_d_contacts, rep(n, length(x)))
+    tm11_b_contacts <- c(tm11_d_contacts, as.integer(names(x)))
+
+    tm2_b_contacts_scaled <- c(tm2_b_contacts_scaled, rep(scaled_n, length(x)))
+    tm11_b_contacts_scaled <- c(tm11_b_contacts_scaled, scaled_x)
+    
+    tm211_b_contacts_scaled <- c(tm211_b_contacts_scaled, c(rbind(rep(scaled_n, length(x)), scaled_x)))
+    tm211_b_contacts <- c(tm211_b_contacts, c(rbind(rep(n, length(x)), names(x))))
+  }
+}
+
+connections_d <- data.frame(contacts = tm211_d_contacts_scaled, 
+                          tm = rep(c(1:2), length(tm211_d_contacts) / 2),
+                          pair = rep(1:(length(tm211_d_contacts) / 2), each = 2)
+                          )
+
+connections_b <- data.frame(contacts = tm211_b_contacts_scaled, 
+                          tm = rep(c(1:2), length(tm211_b_contacts) / 2),
+                          pair = rep(1:(length(tm211_b_contacts) / 2), each = 2)
+                          )
+
+tm_contact_plot_d <- ggplot(connections_d, aes(x = tm, y = contacts)) +
+  geom_line(aes(group = pair)) +
+  theme_void()
+
+tm_contact_plot_b <- ggplot(connections_b, aes(x = tm, y = contacts)) +
+  geom_line(aes(group = pair)) +
+  theme_void()
+
+tm_contact_plot <- ggplot(connections_b, aes(x = tm, y = contacts)) +
+  geom_line(data = connections_d, aes(group = pair, x = tm, y = contacts), color = "wheat") +
+  geom_line(aes(group = pair), color = "cyan") +
+  scale_y_continuous(limits = c(0,1),
+                     expand = c(0,0)) +
+  theme_void()
+
+tm_contact_plot
+
+
+```
+
+
+Note - this is actually TM 11!! Not 7.
+
+TMs 2 and 11 - plot their interaction profile.
+```{r}
+
+order_in <- c("Y", "W", "F", "P", "G", "A", "I", "L", "V", "M", "C", "S", "T",
+              "N", "Q", "D", "E", "H", "R", "K", "D_1")
+
+names <-  c("Y", "W", "F", "P", "G", "A", "I", "L", "V", "M", "C", "S", "T",
+              "N", "Q", "D", "E", "H", "R", "K", "Del")
+
+TM2 <- c(tm2_start:tm2_end)
+TM11 <- c(tm11_start:tm11_end)
+
+# the sequence of TM 2 is reversed for plotting purposes
+tm2_sequence = rev(str_split(substr(oct1_wt_sequence, tm2_start, tm2_end), '')[[1]])
+tm11_sequence = str_split(substr(oct1_wt_sequence, tm11_start, tm11_end), '')[[1]]
+
+p1_in = 0.9
+p2_in = NA
+p3_in = 0.4
+p4_in = NA
+low = -3
+high = 1
+
+plot_tm2 <- oct1_combined_scores %>% filter(mutation_type != "X" & pos %in% TM2) %>% 
+    ggplot(aes(pos, x=factor(variants, level = order_in, labels = names), fill=-1*SM73_1_score, height = 0.9, width = 0.9, color = "black")) + 
+    geom_tile(fill = NA, height = 0.9, width = 0.9, color = 'black', size = 1) +
+    geom_tile(aes(size = as.factor(is.wt), color = as.factor(is.wt))) +
+    scale_size_manual(values = c("TRUE" = 0.2, "FALSE" = 0.2)) +
+    scale_color_manual(values = c("TRUE" = "lightgreen", "FALSE" = "black")) +
+    scale_fill_continuous_divergingx(palette = 'RdBu',
+                                     mid = 0,
+                                     l1 = 0.2,
+                                     l3 = 0.2,
+                                     p1 = p1_in,
+                                     p2 = p2_in,
+                                     p3 = p3_in,
+                                     p4 = p4_in,
+                                     rev=FALSE,
+                                     limits = c(low, high),
+                                     na.value = 'lightyellow') + 
+    scale_y_reverse(limits = c(tm2_end+1, tm2_start-1),
+                        sec.axis = sec_axis(
+                           trans = ~.,
+                           breaks = seq(tm2_end, tm2_start),
+                           labels = tm2_sequence,
+                           guide = derive())) + 
+    coord_fixed(ratio = 1) +
+    xlab("Variant") +
+    ylab("") +
+      theme(
+        panel.background = element_rect(fill = "white"),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        axis.ticks = element_blank(),
+        legend.position="none"
+      )
+  
+plot_tm11 <- oct1_combined_scores %>% filter(mutation_type != "X" & pos %in% TM11) %>% 
+    ggplot(aes(pos, x=factor(variants, level = order_in, labels = names), fill=-1*SM73_1_score, height = 0.9, width = 0.9, color = "black")) + 
+    geom_tile(fill = NA, height = 0.9, width = 0.9, color = 'black', size = 1) +
+    geom_tile(aes(size = as.factor(is.wt), color = as.factor(is.wt))) +
+    scale_size_manual(values = c("TRUE" = 0.2, "FALSE" = 0.2)) +
+    scale_color_manual(values = c("TRUE" = "lightgreen", "FALSE" = "black")) +
+    scale_fill_continuous_divergingx(palette = 'RdBu',
+                                     mid = 0,
+                                     l1 = 0.2,
+                                     l3 = 0.2,
+                                     p1 = p1_in,
+                                     p2 = p2_in,
+                                     p3 = p3_in,
+                                     p4 = p4_in,
+                                     rev=FALSE,
+                                     limits = c(low, high),
+                                     na.value = 'lightyellow') + 
+    scale_y_continuous(limits = c(tm11_start-1, tm11_end+1),
+                    position = "right",
+                    sec.axis = sec_axis(
+                         trans = ~.,
+                         breaks = seq(tm11_start, tm11_end),
+                         labels = tm11_sequence,
+                         guide = derive())) + 
+    coord_fixed(ratio = 1) +
+    xlab("Variant") +
+    ylab("") +
+      theme(
+        panel.background = element_rect(fill = "white"),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        axis.ticks = element_blank(),
+        legend.position="none"
+      )
+
+#d_mpp_dm[c(146), c(461:490)][d_mpp_dm[c(146), c(461:490)] < 10]
+         
+tm_plot <- plot_tm2 + tm_contact_plot + plot_tm11 + plot_layout(widths = c(3, 3, 3))
+
+tm_plot
+
+ggsave("output/Figure_3_tm_plot_long.png", width = 9, height = 4, tm_plot)
+ggsave("output/Figure_3_tm_plot_long.pdf", width = 9, height = 4, tm_plot)
+
+```
+
+
+
+

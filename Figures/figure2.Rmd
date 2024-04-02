@@ -1,0 +1,491 @@
+---
+title: "OCT1 manuscript - figure 2 generation"
+output: html_notebook
+---
+
+Uncomment this line to repeat the initial OCT1 enrich parsing
+```{r}
+#source("oct1_dms_read_enrich.R")
+```
+
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(bio3d)
+library(tidyverse)
+
+library(ggseqlogo)
+
+source("dms_analysis_utilities.R")
+```
+
+
+Read score files
+```{r}
+# Enrich2 score files
+oct1_combined_scores_file ="../data/oct1_combined_scores.csv"
+oct1_combined_scores <- read_csv(oct1_combined_scores_file)
+```
+
+
+Calculate the functional and abundance importance scores.
+
+```{r}
+lowabund_lowfunc <- oct1_combined_scores %>%
+  filter(GFP_score <= abundance_cutoff & SM73_1_score >= sm73_cutoff ) %>%
+  group_by(pos) %>%
+  summarize(low_GFP = sum(abs(GFP_score)))
+
+highabundance_lowfunc <- oct1_combined_scores %>%
+  filter(GFP_score >= abundance_cutoff & SM73_1_score >= sm73_cutoff ) %>%
+  group_by(pos) %>%
+  summarize(low_function = sum(abs(SM73_1_score)))
+
+
+# Combine dataframes, and set NA values to 0.
+oct1_pos_scores <- right_join(lowabund_lowfunc,
+                    right_join(highabundance_lowfunc, 
+                             tibble("pos" = c(1:554)),
+                             by = "pos"),
+                    by = "pos") %>% replace(is.na(.), 0)
+
+oct1_combined_scores <- left_join(oct1_combined_scores,
+                                  oct1_pos_scores,
+                                  by = "pos")
+
+
+# Set the cutoffs for the scores
+folding_score_break = 20
+function_score_break = 5
+
+```
+
+Plot profiles of the scores
+```{r}
+folding_score_plot <- ggplot(oct1_pos_scores) +
+  geom_line(aes(x = pos, y = low_GFP), color = "red") +
+  geom_hline(yintercept = folding_score_break, linetype = 2) +
+  xlab("Residue") +
+  ylab("Stability importance") +
+  scale_x_continuous(name = "Residue", breaks = c(1, seq(50, 550, 50))) +
+  theme_classic()
+
+folding_score_plot_k <- ggplot(oct1_pos_scores) +
+  geom_line(aes(x = pos, y = low_GFP), color = "black") +
+  geom_hline(yintercept = folding_score_break, linetype = 2) +
+  xlab("Residue") +
+  ylab("Stability importance") +
+  scale_x_continuous(name = "Residue", breaks = c(1, seq(50, 550, 50))) +
+  theme_classic()
+
+function_score_plot <- ggplot(oct1_pos_scores) +
+  geom_line(aes(x = pos, y = low_function), color = "blue") +
+  geom_hline(yintercept = function_score_break, linetype = 2) +
+  xlab("Residue") +
+  ylab("Functional importance") +
+  scale_x_continuous(name = "Residue", breaks = c(1, seq(50, 550, 50))) +
+  theme_classic()
+
+ggplot(oct1_pos_scores) +
+  geom_line(aes(x = pos, y = low_function), color = "blue") +
+  geom_line(aes(x = pos, y = low_GFP/10), color = "red") +
+  xlab("Residue") +
+  ylab("Importance scores") +
+  scale_x_continuous(name = "Residue", breaks = c(1, seq(50, 550, 50))) +
+  scale_y_continuous(name = "Functional importance",
+                     sec.axis = sec_axis(~.*10,
+                                         name="Stability importance")) +
+  theme_classic()
+
+ggsave("output/Figure_2_folding.png", width = 5, height = 2, folding_score_plot)
+ggsave("output/Figure_2_folding.pdf", width = 5, height = 2, folding_score_plot)
+
+ggsave("output/Figure_2_folding_k.png", width = 5, height = 2, folding_score_plot_k)
+ggsave("output/Figure_2_folding_k.pdf", width = 5, height = 2, folding_score_plot_k)
+
+```
+
+
+
+
+
+
+Folding importance scores correlation with residue identities
+```{r}
+
+### Physicochem boxplots folding
+order <- c('aromatic', 'aliphatic', 'hydrophobic', 'branched', 'small',
+          'polar', 'negative', 'positive', 'polar_uncharged', 'proton_don_acc',
+          'helix_break', 'cysteine', 'deletion', 'Glycine', 'Proline')
+
+hydrophobic <- c('I','L','V','M','C','A','T','H','K','W','Y','F')
+aromatic <- c('W','F','Y','H')
+aliphatic <- c('V','A','L','I')
+small <- c('C','V','A','C','T','S','G')
+tiny <- c('G','S','C','A')
+positive <- c('R','K','H')
+negative <- c('D','E')
+polar <- c('N','Q','C','S','H','Y','T','R','K','D','E')
+polar_uncharged <- c('N','Q','C','S','T')
+branched <- c('V','I','T')
+helix_break <- c('G','P')
+proton_don_acc <- c('C','H')
+cysteine <- c('C')
+deletion <- c('D_1')
+Glycine <- c('G')
+Proline <- c('P')
+Met <- c('M')
+
+oct1_fold_cysteine <- oct1_combined_scores %>% filter(wt_pos %in% cysteine) %>%
+  mutate(folding_importance = cut(low_GFP, breaks = c(0, folding_score_break, Inf), labels = c("None",  "High"), right = FALSE))
+
+oct1_fold_aromatic <- oct1_combined_scores %>% filter(wt_pos %in% aromatic) %>%
+  mutate(folding_importance = cut(low_GFP, breaks = c(0, folding_score_break, Inf), labels = c("None",  "High"), right = FALSE))
+
+oct1_fold_negative <- oct1_combined_scores %>% filter(wt_pos %in% negative) %>%
+  mutate(folding_importance = cut(low_GFP, breaks = c(0, folding_score_break, Inf), labels = c("None",  "High"), right = FALSE))
+
+folding_cysteine_plot <- bind_rows(cysteine = oct1_fold_cysteine %>% filter(variants %in% cysteine),
+                                   met = oct1_fold_cysteine %>% filter(variants %in% Met),
+                                   aromatic = oct1_fold_cysteine %>% filter(variants %in% aromatic),
+                                   aliphatic = oct1_fold_cysteine %>% filter(variants %in% aliphatic),
+                                   polar = oct1_fold_cysteine %>% filter(variants %in% polar & !is.wt),
+                                   all = oct1_fold_cysteine,
+                                   .id = "mutated_physicochem"
+          ) %>%
+  mutate(mutated_physicochem = factor(mutated_physicochem, 
+                                      levels = c("cysteine", 
+                                                 "met",
+                                                 "aromatic",
+                                                 "aliphatic",
+                                                 "polar", 
+                                                 "all"))) %>%
+  ggplot(aes(x = mutated_physicochem, y = GFP_score, fill = folding_importance)) +
+  scale_fill_manual(values = c("grey", "red")) +
+  geom_boxplot() +
+  ylab("Abundance score") +
+  xlab("Variant class") +
+  ggtitle("WT: Cysteine") +
+  scale_x_discrete(labels=c('Cysteine (S)',
+                            'Met',
+                            'Aromatic',
+                            'Aliphatic',
+                            'Polar',
+                            'All')) +
+  theme_classic() +
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = -45, vjust = 0, hjust=0))
+
+folding_aromatic_plot <- bind_rows(syn_aromatic = oct1_fold_aromatic %>% filter(variants %in% aromatic & is.wt),
+                                   aromatic = oct1_fold_aromatic %>% filter(variants %in% aromatic & !is.wt),
+                                   cysteine = oct1_fold_aromatic %>% filter(variants %in% cysteine),
+                                   aliphatic = oct1_fold_aromatic %>% filter(variants %in% aliphatic),
+                                   polar = oct1_fold_aromatic %>% filter(variants %in% polar & !is.wt),
+                                   all = oct1_fold_aromatic,
+                                   .id = "mutated_physicochem"
+                                   ) %>%
+  mutate(mutated_physicochem = factor(mutated_physicochem, 
+                                      levels = c("syn_aromatic", 
+                                                 "aromatic",
+                                                 'cysteine',
+                                                 "aliphatic", 
+                                                 "polar",
+                                                 "all"))) %>%
+  ggplot(aes(x = mutated_physicochem, y = GFP_score, fill=folding_importance)) +
+  scale_fill_manual(values = c("grey", "red")) +
+  geom_boxplot() +
+  ylab("Abundance score") +
+  xlab("Variant class") +
+  ggtitle("WT: Aromatic (F, Y, W, H)") +
+  scale_x_discrete(labels=c('Aromatic (S)',
+                            'Aromatic (NS)',
+                            'Cysteine',
+                            'Aliphatic',
+                            'Polar',
+                            'All')) +
+  theme_classic() +
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = -45, vjust = 0, hjust=0))
+
+folding_negative_plot <- bind_rows(syn_negative = oct1_fold_negative %>% filter(variants %in% negative & is.wt),
+                                   negative = oct1_fold_negative %>% filter(variants %in% negative & !is.wt),
+                                   cysteine = oct1_fold_negative %>% filter(variants %in% cysteine),
+          positive = oct1_fold_negative %>% filter(variants %in% positive),
+          polar_uncharged = oct1_fold_negative %>% filter(variants %in% polar_uncharged),
+          aromatic = oct1_fold_negative %>% filter(variants %in% aromatic),
+          all = oct1_fold_negative,
+          .id = "mutated_physicochem"
+          ) %>%
+  mutate(mutated_physicochem = factor(mutated_physicochem, 
+                                      levels = c("syn_negative", 
+                                                 "negative", 
+                                                 'cysteine',
+                                                 "aromatic",
+                                                 "positive", 
+                                                 "polar_uncharged",
+                                                 "all"))) %>%
+  ggplot(aes(x = mutated_physicochem, y = GFP_score, fill=folding_importance)) +
+  scale_fill_manual(values = c("grey", "red")) +
+  geom_boxplot() +
+  ylab("Abundance score") +
+  xlab("Variant class") +
+  ggtitle("WT: Negative Charge (D, E)") +
+  scale_x_discrete(labels=c('Negative (S)',
+                            'Negative  (NS)',
+                            'Cysteine',
+                            'Aromatic',
+                            'Positive',
+                            'Polar uncharged',
+                            'All')) +
+  theme_classic() +
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = -45, vjust = 0, hjust=0))
+
+folding_plots <- folding_cysteine_plot + folding_aromatic_plot + folding_negative_plot + 
+                    plot_layout(ncol = 3, nrow = 1, widths = c(3, 3, 3), heights = c(2))
+
+plot(folding_plots)
+
+
+ggsave("output/Figure_2_folding_plots.png", width = 12, height = 4, folding_plots)
+ggsave("output/Figure_2_folding_plots.pdf", width = 12, height = 4, folding_plots)
+
+```
+
+Create additional plots
+
+```{r}
+
+order <- c('aromatic', 'aliphatic', 'hydrophobic', 'branched', 'small',
+          'polar', 'negative', 'positive', 'polar_uncharged', 'proton_don_acc',
+          'helix_break', 'cysteine', 'deletion', 'Glycine', 'Proline')
+
+hydrophobic <- c('I','L','V','M','C','A','T','H','K','W','Y','F')
+aromatic <- c('W','F','Y','H')
+aliphatic <- c('V','A','L','I')
+small <- c('C','V','A','C','T','S','G')
+tiny <- c('G','S','C','A')
+positive <- c('R','K','H')
+negative <- c('D','E')
+polar <- c('N','Q','C','S','H','Y','T','R','K','D','E')
+polar_uncharged <- c('N','Q','C','S','T')
+branched <- c('V','I','T')
+helix_break <- c('G','P')
+proton_don_acc <- c('C','H')
+cysteine <- c('C')
+deletion <- c('D_1')
+Glycine <- c('G')
+Proline <- c('P')
+
+oct1_fold_hydrophobic <- oct1_combined_scores %>% filter(wt_pos %in% hydrophobic) %>%
+  mutate(folding_importance = cut(low_GFP, breaks = c(0, folding_score_break, Inf), labels = c("None",  "High"), right = FALSE))
+
+oct1_fold_polar <- oct1_combined_scores %>% filter(wt_pos %in% polar) %>%
+  mutate(folding_importance = cut(low_GFP, breaks = c(0, folding_score_break, Inf), labels = c("None",  "High"), right = FALSE))
+
+oct1_fold_aliphatic <- oct1_combined_scores %>% filter(wt_pos %in% aliphatic) %>%
+  mutate(folding_importance = cut(low_GFP, breaks = c(0, folding_score_break, Inf), labels = c("None",  "High"), right = FALSE))
+
+oct1_fold_positive <- oct1_combined_scores %>% filter(wt_pos %in% positive) %>%
+  mutate(folding_importance = cut(low_GFP, breaks = c(0, folding_score_break, Inf), labels = c("None",  "High"), right = FALSE))
+
+folding_hydrophobic_plot <- bind_rows(syn_hydrophobic = oct1_fold_hydrophobic %>% filter(variants %in% hydrophobic & is.wt),
+                                      hydrophobic = oct1_fold_hydrophobic %>% filter(variants %in% hydrophobic & !is.wt),
+          aliphatic = oct1_fold_hydrophobic %>% filter(variants %in% aliphatic & !is.wt),
+          polar = oct1_fold_hydrophobic %>% filter(variants %in% polar & !is.wt),
+          all = oct1_fold_hydrophobic,
+          .id = "mutated_physicochem"
+          ) %>%
+  mutate(mutated_physicochem = factor(mutated_physicochem, 
+                                      levels = c("syn_hydrophobic", 
+                                                 "hydrophobic",
+                                                 "aliphatic", 
+                                                 "polar",
+                                                 "all"))) %>%
+  ggplot(aes(x = mutated_physicochem, y = GFP_score, fill=folding_importance)) +
+  scale_fill_manual(values = c("grey", "red")) +
+  geom_boxplot() +
+  ylab("Abundance score") +
+  xlab("Variant class") +
+  ggtitle("WT: Hydrophobic") +
+  scale_x_discrete(labels=c('Hydrophobic (S)',
+                            'Hydrophobic (NS)',
+                            'Aliphatic',
+                            'Polar',
+                            'All')) +
+  theme_classic() +
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = -45, vjust = 0, hjust=0))
+
+folding_polar_plot <- bind_rows(syn_polar = oct1_fold_polar %>% filter(variants %in% polar & is.wt),
+                                polar = oct1_fold_polar %>% filter(variants %in% polar & !is.wt),
+          positive = oct1_fold_polar %>% filter(variants %in% positive & !is.wt),
+          polar_uncharged = oct1_fold_polar %>% filter(variants %in% polar_uncharged & !is.wt),
+          aromatic = oct1_fold_polar %>% filter(variants %in% aromatic & !is.wt),
+          all = oct1_fold_polar,
+          .id = "mutated_physicochem"
+          ) %>%
+  mutate(mutated_physicochem = factor(mutated_physicochem, 
+                                      levels = c("syn_polar", 
+                                                 "polar",
+                                                 "positive", 
+                                                 "polar_uncharged",
+                                                 "aromatic",
+                                                 "all"))) %>%
+  ggplot(aes(x = mutated_physicochem, y = GFP_score, fill=folding_importance)) +
+  scale_fill_manual(values = c("grey", "red")) +
+  geom_boxplot() +
+  ylab("Abundance score") +
+  xlab("Variant class") +
+  ggtitle("WT: Polar") +
+  scale_x_discrete(labels=c('Polar (S)',
+                            'Polar (NS)',
+                            'Positive',
+                            'Polar uncharged',
+                            'Aromatic',
+                            'All')) +
+  theme_classic() +
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = -45, vjust = 0, hjust=0))
+
+folding_aliphatic_plot <- bind_rows(syn_aliphatic = oct1_fold_aliphatic %>% filter(variants %in% aliphatic & is.wt),
+                                    aliphatic = oct1_fold_aliphatic %>% filter(variants %in% aliphatic & !is.wt),
+          positive = oct1_fold_aliphatic %>% filter(variants %in% positive),
+          negative = oct1_fold_aliphatic %>% filter(variants %in% negative),
+          aromatic = oct1_fold_aliphatic %>% filter(variants %in% aromatic),
+          all = oct1_fold_aliphatic,
+          .id = "mutated_physicochem"
+          ) %>%
+  mutate(mutated_physicochem = factor(mutated_physicochem, 
+                                      levels = c("syn_aliphatic", 
+                                                 "aliphatic",
+                                                 "positive", 
+                                                 "negative",
+                                                 "aromatic",
+                                                 "all"))) %>%
+  ggplot(aes(x = mutated_physicochem, y = GFP_score, fill=folding_importance)) +
+  scale_fill_manual(values = c("grey", "red")) +
+  geom_boxplot() +
+  ylab("Abundance score") +
+  xlab("Variant class") +
+  ggtitle("WT: Aliphatic") +
+  scale_x_discrete(labels=c('Aliphatic (S)',
+                            'Aliphatic (NS)',
+                            'Positive',
+                            'Negative',
+                            'Aromatic',
+                            'All')) +
+  theme_classic() +
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = -45, vjust = 0, hjust=0))
+
+folding_positive_plot <- bind_rows(syn_positive = oct1_fold_positive %>% filter(variants %in% positive & is.wt),
+                                    positive = oct1_fold_positive %>% filter(variants %in% positive & !is.wt),
+          aromatic = oct1_fold_positive %>% filter(variants %in% positive & !is.wt),
+          aliphatic = oct1_fold_positive %>% filter(variants %in% positive),
+          negative = oct1_fold_positive %>% filter(variants %in% negative),
+          polar = oct1_fold_positive %>% filter(variants %in% polar & !is.wt),
+          all = oct1_fold_positive,
+          .id = "mutated_physicochem"
+          ) %>%
+  mutate(mutated_physicochem = factor(mutated_physicochem, 
+                                      levels = c("syn_positive", 
+                                                 "positive",
+                                                 "aromatic",
+                                                 "aliphatic",
+                                                 "negative",
+                                                 "polar", 
+                                                 "all"))) %>%
+  ggplot(aes(x = mutated_physicochem, y = GFP_score, fill=folding_importance)) +
+  scale_fill_manual(values = c("grey", "red")) +
+  geom_boxplot() +
+  ylab("Abundance score") +
+  xlab("Variant class") +
+  ggtitle("WT: Positive") +
+  scale_x_discrete(labels=c('Positive (S)',
+                            'Positive (NS)',
+                            'Aromatic',
+                            'Aliphatic',
+                            'Negative',
+                            'Polar',
+                            'All')) +
+  theme_classic() +
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = -45, vjust = 0, hjust=0))
+
+folding_plots <- folding_hydrophobic_plot + folding_aliphatic_plot + folding_positive_plot +
+                    plot_layout(ncol = 3, nrow = 1, widths = c(3, 3, 3), heights = c(2))
+
+plot(folding_plots)
+
+ggsave("output/Figure_2_folding_plots_additional.png", width = 10, height = 4, folding_plots)
+ggsave("output/Figure_2_folding_plots_additional.pdf", width = 10, height = 4, folding_plots)
+
+```
+
+Figure: Correlations between BLOSUM distance and GFP score
+
+First, generate the blosum distance using the blosum62 matrix
+
+```{r}
+blosum62 <- read.table("../data/BLOSUM62.tsv", header = TRUE, sep = "\t", row.names = 1)
+blosum62 <- as.matrix(blosum62)
+
+blosum90 <- read.table("../data/BLOSUM90.tsv", header = TRUE, sep = "\t", row.names = 1)
+blosum90 <- as.matrix(blosum90)
+```
+
+Next, calculate the blosum distance between each variant and the wildtype sequence
+
+```{r}
+oct1_blosum <- oct1_combined_scores %>% filter(mutation_type %in% c('M', 'S')) %>%
+  mutate(blosum_distance_62 = map2_dbl(variants, wt_pos, ~ blosum62[.x, .y]),
+         blosum_distance_90 = map2_dbl(variants, wt_pos, ~ blosum90[.x, .y]))
+
+oct1_blosum <- oct1_blosum %>% 
+  mutate(folding_importance = cut(low_GFP, breaks = c(0, folding_score_break, Inf), labels = c("None",  "High"), right = FALSE))
+```
+
+Finally, plot the blosum62 distance against the GFP score
+
+```{r}
+blosum_plot <- oct1_blosum %>%
+  ggplot(aes(x = blosum_distance_62, y = GFP_score, color = folding_importance)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method = "loess") +
+  stat_cor(method = "spearman", cor.coef.name = c("rho"), label.x.npc = c(0.7, 0.7), label.y.npc = c(0.45, 0.4)) +
+  ylab("Abundance score") +
+  xlab("BLOSUM62 distance") +
+  scale_color_manual(values = c("black", "red")) +
+  scale_x_continuous(limits = c(-5,10)) +
+  theme_classic() +
+  theme(legend.position="none")
+
+plot(blosum_plot)
+
+ggsave("output/Figure_2_folding_plot_blosum62.png", width = 7, height = 4, blosum_plot)
+ggsave("output/Figure_2_folding_plot_blosum62.pdf", width = 7, height = 4, blosum_plot)
+```
+
+
+
+```{r}
+
+blosum_90_plot <- oct1_blosum %>%
+  ggplot(aes(x = blosum_distance_90, y = GFP_score, color = folding_importance)) +
+  geom_point(alpha = 0.2) +
+  geom_smooth(method = "loess") +
+  stat_cor(method = "spearman", cor.coef.name = c("rho"), label.x.npc = c(0.7, 0.7), label.y.npc = c(0.45, 0.4)) +
+  ylab("Abundance score") +
+  xlab("BLOSUM90 distance") +
+  scale_color_manual(values = c("black", "red")) +
+  theme_classic() +
+  theme(legend.position="none")
+
+plot(blosum_90_plot)
+
+ggsave("output/Figure_2_folding_plot_blosum90.png", width = 4, height = 4, blosum_90_plot)
+ggsave("output/Figure_2_folding_plot_blosum90.pdf", width = 4, height = 4, blosum_90_plot)
+
+```

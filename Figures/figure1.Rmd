@@ -1,0 +1,222 @@
+---
+title: "OCT1 manuscript - figure 1 generation"
+output: html_notebook
+---
+
+Uncomment this line to repeat the initial OCT1 enrich parsing
+```{r}
+#source("oct1_dms_read_enrich.R")
+```
+
+
+```{r}
+library(MASS)
+
+library(ggplot2)
+library(dplyr)
+library(bio3d)
+library(tidyverse)
+library(colorspace)
+library(cowplot)
+library(ggpubr)
+library(patchwork)
+
+source("dms_analysis_utilities.R")
+```
+
+
+Read score files
+```{r}
+# Enrich2 score files
+oct1_combined_scores_file ="../data/oct1_combined_scores.csv"
+oct1_combined_scores <- read_csv(oct1_combined_scores_file)
+
+oct1_combined_scores <- oct1_combined_scores %>% mutate(pos = as.integer(pos),
+                                                        len = as.integer(len))
+
+```
+
+Count total variants in dataset (note: WT is included here, so reduce by 1)
+```{r}
+dim(oct1_combined_scores %>% filter(!is.na(SM73_0_score) | !is.na(SM73_1_score) | !is.na(GFP_score)))
+```
+
+
+
+Plot the heatmap.
+
+
+```{r}
+
+order <- c('D_1', 'H', 'K', 'R', 'D', 'E',
+          'C', 'M', 'N', 'Q', 'S', 'T', 'A', 'I', 'L', 'V', 'W', 'F',
+          'Y', 'G', 'P')
+
+names <- c('Del', 'H', 'K', 'R', 'D', 'E',
+          'C', 'M', 'N', 'Q', 'S', 'T', 'A', 'I', 'L', 'V', 'W', 'F',
+          'Y', 'G', 'P')
+
+oct1_wt = "MPTVDDILEQVGESGWFQKQAFLILCLLSAAFAPICVGIVFLGFTPDHHCQSPGVAELSQRCGWSPAEELNYTVPGLGPAGEAFLGQCRRYEVDWNQSALSCVDPLASLATNRSHLPLGPCQDGWVYDTPGSSIVTEFNLVCADSWKLDLFQSCLNAGFLFGSLGVGYFADRFGRKLCLLGTVLVNAVSGVLMAFSPNYMSMLLFRLLQGLVSKGNWMAGYTLITEFVGSGSRRTVAIMYQMAFTVGLVALTGLAYALPHWRWLQLAVSLPTFLFLLYYWCVPESPRWLLSQKRNTEAIKIMDHIAQKNGKLPPADLKMLSLEEDVTEKLSPSFADLFRTPRLRKRTFILMYLWFTDSVLYQGLILHMGATSGNLYLDFLYSALVEIPGAFIALITIDRVGRIYPMAMSNLLAGAACLVMIFISPDLHWLNIIIMCVGRMGITIAIQMICLVNAELYPTFVRNLGVMVCSSLCDIGGIITPFIVFRLREVWQALPLILFAVLGLLAAGVTLLLPETKGVALPETMKDAENLGRKAKPKENTIYLKVQTSEPSGT"
+
+
+```
+
+```{r}
+source("dms_analysis_utilities.R")
+
+print_heatmap(oct1_combined_scores, SM73_1_score, oct1_wt,
+              output_file = "output/heatmap_sm73_1.pdf", low = NA, high = NA, order_in = order, 
+              names = names, p1_in = 0.9, p2_in = NA, p3_in = 0.4, 
+              p4_in = NA, print = TRUE, scale = FALSE, invert_scale = TRUE, row_length = 150)
+
+print_heatmap(oct1_combined_scores, SM73_1_score, oct1_wt,
+              output_file = "output/heatmap_sm73_1_scale.pdf", low = NA, high = NA, order_in = order, 
+              names = names, p1_in = 0.9, p2_in = NA, p3_in = 0.4, 
+              p4_in = NA, print = TRUE, scale = TRUE, invert_scale = TRUE, row_length = 150)
+
+print_heatmap(oct1_combined_scores, GFP_score, oct1_wt,
+              output_file = "output/heatmap_gfp_scale.pdf", low = NA, high = NA, order_in = order, 
+              names = names, p1_in = 0.9, p2_in = NA, p3_in = 0.4, 
+              p4_in = NA, print = TRUE, scale = TRUE, row_length = 150)
+
+print_heatmap(oct1_combined_scores, GFP_SE, oct1_wt,
+              output_file = "output/SI_figures/heatmap_GFP_SE.pdf", low = NA, high = NA, order_in = order, 
+              names = names, p1_in = 0.9, p2_in = NA, p3_in = 0.4, 
+              p4_in = NA, print = TRUE, row_length = 150)
+
+print_heatmap(oct1_combined_scores, SM73_1_SE, oct1_wt,
+              output_file = "output/SI_figures/heatmap_SM73_1_SE.pdf", low = NA, high = NA, order_in = order, 
+              names = names, p1_in = 0.9, p2_in = NA, p3_in = 0.4, 
+              p4_in = NA, print = TRUE, row_length = 150)
+```
+
+
+Determine the cutoff for significantly non-neutral change in function and abundance
+based on the distribution of synonymous variants. 
+```{r}
+folding_synonymous_fit <- fitdistr(
+  oct1_combined_scores %>% filter(!is.na(GFP_score) & mutation_type == "S") %>% .$GFP_score,
+  densfun = "normal"
+)
+
+function_synonymous_fit <- fitdistr(
+  oct1_combined_scores %>% filter(!is.na(SM73_1_score) & mutation_type == "S") %>% .$SM73_1_score,
+  densfun = "normal"
+)
+
+# Cutoff for _loss of function_ 
+sm73_cutoff = function_synonymous_fit$estimate[["mean"]] + 2 * function_synonymous_fit$estimate[["sd"]]
+abundance_cutoff = folding_synonymous_fit$estimate[["mean"]] - 2 * function_synonymous_fit$estimate[["sd"]]
+
+# Cutoffs for _gain of function_ 
+sm73_cutoff_2 = function_synonymous_fit$estimate[["mean"]] - 2 * function_synonymous_fit$estimate[["sd"]]
+abundance_cutoff_2 = folding_synonymous_fit$estimate[["mean"]] + 2 * function_synonymous_fit$estimate[["sd"]]
+
+print(sm73_cutoff)
+print(abundance_cutoff)
+
+```
+
+
+```{r}
+score_plot <- ggplot(oct1_combined_scores %>% filter(mutation_type != "X")) +
+  geom_point(aes(y = SM73_1_score, x = GFP_score), alpha = 0.2) +
+  geom_hline(yintercept = function_synonymous_fit$estimate[["mean"]] +
+               2 * function_synonymous_fit$estimate[["sd"]], linetype = 2) +
+  geom_hline(yintercept = function_synonymous_fit$estimate[["mean"]] -
+               2 * function_synonymous_fit$estimate[["sd"]], linetype = 2) +
+  geom_vline(xintercept = folding_synonymous_fit$estimate[["mean"]] +
+               2 * folding_synonymous_fit$estimate[["sd"]], linetype = 2) +
+  geom_vline(xintercept = folding_synonymous_fit$estimate[["mean"]] -
+               2 * folding_synonymous_fit$estimate[["sd"]], linetype = 2) +
+  ylab("Cytotoxicity score") +
+  xlab("Abundance score") +
+  theme_classic() 
+
+dens1 <- ggplot(oct1_combined_scores %>% filter(mutation_type != "X"),
+                aes(x = SM73_1_score, fill = mutation_type)) + 
+  geom_density(alpha = 0.4) + 
+  geom_function(fun = dnorm, args = list(mean = function_synonymous_fit$estimate[["mean"]],
+                                         sd = function_synonymous_fit$estimate[["sd"]]),
+                color = "red", linetype = 2) +
+  geom_vline(xintercept = function_synonymous_fit$estimate[["mean"]] +
+               2 * function_synonymous_fit$estimate[["sd"]], linetype = 2) +
+  geom_vline(xintercept = function_synonymous_fit$estimate[["mean"]] -
+               2 * function_synonymous_fit$estimate[["sd"]], linetype = 2) +
+  scale_fill_manual(values = c("blue", "yellow", "grey")) +
+  theme_void() + 
+  coord_flip() +
+  theme(legend.position = "none")
+
+dens2 <- ggplot(oct1_combined_scores %>% filter(mutation_type != "X"),
+                aes(x = GFP_score, fill = mutation_type)) + 
+  geom_density(alpha = 0.4) + 
+  geom_function(fun = dnorm, args = list(mean = folding_synonymous_fit$estimate[["mean"]],
+                                         sd = folding_synonymous_fit$estimate[["sd"]]),
+                color = "red", linetype = 2) +
+  geom_vline(xintercept = folding_synonymous_fit$estimate[["mean"]] +
+               2 * folding_synonymous_fit$estimate[["sd"]], linetype = 2) +
+  geom_vline(xintercept = folding_synonymous_fit$estimate[["mean"]] -
+               2 * folding_synonymous_fit$estimate[["sd"]], linetype = 2) +
+  scale_fill_manual(values = c("blue", "yellow", "grey")) +
+  theme_void() + 
+  theme(legend.position = "none")
+
+scores_scatter <- dens2 + plot_spacer() + score_plot + dens1 + 
+                    plot_layout(ncol = 2, nrow = 2, widths = c(3, 1), heights = c(1, 3))
+scores_scatter
+
+ggsave("output/Figure_1_scatter.png", width = 5, height = 5, scores_scatter)
+ggsave("output/Figure_1_scatter.pdf", width = 5, height = 5, scores_scatter)
+```
+
+```{r}
+oct1_synonymous <- oct1_combined_scores %>% filter(mutation_type == "S") %>%
+  select(SM73_1_score, GFP_score) %>% 
+  filter(!is.na(SM73_1_score) & !is.na(GFP_score))
+
+pca_fit <- oct1_synonymous %>% prcomp(scale = FALSE, center = TRUE)
+
+pca_fit %>%
+  augment(oct1_synonymous) %>% # add original dataset back in
+  ggplot(aes(.fittedPC1, .fittedPC2)) + 
+  geom_point(size = 1.5) +
+  theme_half_open(12) + background_grid()
+
+
+
+ggplot(oct1_combined_scores %>% filter(mutation_type == "S"),
+       aes(y = SM73_1_score, x = GFP_score)) +
+  geom_point(data = oct1_combined_scores %>% filter(mutation_type != "S" & 
+                                                    mutation_type != "X"), 
+             aes(y = SM73_1_score, x = GFP_score),
+             alpha = 0.2, color = "black") +
+  geom_point(alpha = 0.2, color = "red") +
+  geom_vline(xintercept = function_synonymous_fit$estimate[["mean"]] +
+               2 * function_synonymous_fit$estimate[["sd"]], linetype = 2) +
+  geom_vline(xintercept = function_synonymous_fit$estimate[["mean"]] -
+               2 * function_synonymous_fit$estimate[["sd"]], linetype = 2) +
+  geom_hline(yintercept = folding_synonymous_fit$estimate[["mean"]] +
+               2 * folding_synonymous_fit$estimate[["sd"]], linetype = 2) +
+  geom_hline(yintercept = folding_synonymous_fit$estimate[["mean"]] -
+               2 * folding_synonymous_fit$estimate[["sd"]], linetype = 2) +
+  stat_ellipse(type = "norm", level = 0.9, color = "#fee6ce", size = 2) +
+  stat_ellipse(type = "norm", level = 0.95, color = "#fdae6b", size = 2) +
+  stat_ellipse(type = "norm", level = 0.99, color = "#e6550d", size = 2) +
+  ylab("Cytotoxicity score") +
+  xlab("Abundance score") +
+  coord_fixed() +
+  theme_classic()
+
+```
+
+
+Calculate fraction of variants with loss of function via cytotoxicity with neutral or gain of function via abundance.
+
+```{r}
+oct1_combined_scores %>% filter(mutation_type != "X" & !is.na(SM73_1_score) & !is.na(GFP_score)) %>%
+  mutate(loss_of_transport = ifelse(SM73_1_score > sm73_cutoff, 1, 0),
+         non_lof_abundance = ifelse(GFP_score > abundance_cutoff, 1, 0)) %>%
+  group_by(loss_of_transport, non_lof_abundance) %>% tally() %>% spread(loss_of_transport, n)
+
+```
