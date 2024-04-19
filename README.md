@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/524223544.svg)](https://zenodo.org/doi/10.5281/zenodo.10909291)
+
 # OCT1 DMS data
 
 Code, data, and plotting utilities for the manuscript:
